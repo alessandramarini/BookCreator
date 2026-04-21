@@ -24,22 +24,21 @@
             -webkit-tap-highlight-color: transparent; 
             touch-action: manipulation;
             overscroll-behavior-y: none;
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
         }
 
-        /* Ottimizzazione Scrolling Mobile */
         .scrollable-panel { 
             -webkit-overflow-scrolling: touch; 
             scroll-behavior: smooth;
-            padding-bottom: 120px;
+            padding-bottom: 100px;
         }
 
-        /* Scaling dinamico dell'anteprima su mobile */
+        /* Scaling per mobile dell'anteprima */
         @media (max-width: 768px) {
             #book-export-area {
-                transform: scale(0.45);
+                transform: scale(0.42);
                 transform-origin: top center;
-                margin-bottom: -500px;
+                margin-bottom: -600px;
             }
             .preview-container {
                 display: flex;
@@ -54,7 +53,7 @@
         .loader { 
             border: 2px solid #f3f3f3; 
             border-radius: 50%; 
-            border-top: 2px solid currentColor; 
+            border-top: 2px solid #4f46e5; 
             width: 16px; 
             height: 16px; 
             animation: spin 1s linear infinite; 
@@ -63,16 +62,21 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .book-content { font-family: 'Georgia', serif; }
-        .book-content h1 { font-size: 2.5rem; font-weight: 900; line-height: 1.2; text-align: center; }
-        .book-content h2 { font-size: 1.8rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #1e293b; }
+        .book-content h1 { font-size: 2.5rem; font-weight: 900; text-align: center; margin-bottom: 2rem; }
+        .book-content h2 { font-size: 1.8rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; }
         .book-content p { font-size: 1.1rem; line-height: 1.7; text-align: justify; margin-bottom: 1.2rem; }
 
-        #status-message.show { transform: translateY(0); opacity: 1; }
-        #status-message { transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        #status-message.show { transform: translate(-50%, 0); opacity: 1; }
+        #status-message { 
+            left: 50%;
+            transform: translate(-50%, -20px); 
+            opacity: 0; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
 
         @keyframes pulse-magic {
             0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 0.8; }
         }
         .magic-pulse { animation: pulse-magic 2s infinite ease-in-out; }
     </style>
@@ -80,413 +84,307 @@
 <body class="h-screen overflow-hidden flex flex-col font-sans antialiased text-slate-800">
 
     <!-- Magic Loader Overlay -->
-    <div id="magic-loader" class="fixed inset-0 bg-slate-900/80 z-[150] hidden flex-col items-center justify-center backdrop-blur-sm transition-all duration-300">
-        <div class="relative">
-            <div class="w-24 h-24 bg-indigo-600/20 rounded-full flex items-center justify-center magic-pulse">
-                <i class="fas fa-wand-magic-sparkles text-5xl text-indigo-400"></i>
-            </div>
-            <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center animate-bounce">
-                <i class="fas fa-star text-[10px] text-amber-900"></i>
-            </div>
+    <div id="magic-loader" class="fixed inset-0 bg-indigo-950/90 z-[150] hidden flex-col items-center justify-center backdrop-blur-md transition-all duration-300">
+        <div class="w-20 h-20 bg-indigo-500/20 rounded-full flex items-center justify-center magic-pulse mb-6">
+            <i class="fas fa-wand-magic-sparkles text-4xl text-indigo-400"></i>
         </div>
-        <p class="text-xl font-black text-white mt-8 tracking-widest uppercase text-center px-6">
-            Sto facendo la magia...
-        </p>
-        <p class="text-indigo-300 text-xs mt-2 font-bold opacity-70 italic">L'IA sta creando i tuoi contenuti</p>
+        <p class="text-xl font-black text-white tracking-widest uppercase text-center px-6">Sto facendo la magia...</p>
+        <p class="text-indigo-300 text-xs mt-2 font-bold opacity-70 italic">L'IA sta scrivendo per te</p>
     </div>
 
     <!-- API Key Modal -->
     <div id="api-key-modal" class="fixed inset-0 bg-slate-900/90 z-[110] hidden items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
-            <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mb-4">
-                <i class="fas fa-key text-amber-600 text-xl"></i>
-            </div>
-            <h2 class="text-xl font-black text-slate-800 mb-2">Configura AI</h2>
-            <p id="api-modal-msg" class="text-xs text-slate-500 mb-6">Inserisci la tua chiave Gemini API per iniziare. Verrà salvata solo sul tuo dispositivo.</p>
-            <input type="password" id="input-api-key" class="w-full border-2 border-slate-100 bg-slate-50 rounded-2xl p-4 mb-6 font-mono text-sm focus:border-indigo-500 outline-none transition-all" placeholder="AIzaSy...">
+            <h2 class="text-xl font-black text-slate-800 mb-2 flex items-center gap-2"><i class="fas fa-key text-amber-500"></i> Chiave AI</h2>
+            <p class="text-xs text-slate-500 mb-6">Inserisci la tua chiave Gemini API per attivare le funzioni creative.</p>
+            <input type="password" id="input-api-key" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 mb-6 font-mono text-sm focus:border-indigo-500 outline-none transition-all" placeholder="Incolla qui la chiave...">
             <div class="flex flex-col gap-3">
-                <button id="btn-save-api-key" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black shadow-lg shadow-indigo-200 active:scale-95 transition-all">Salva Chiave</button>
-                <button id="btn-close-api-modal" class="w-full py-3 text-slate-400 font-bold text-sm">Annulla</button>
+                <button id="btn-save-api-key" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-all">Collega AI</button>
+                <button id="btn-close-api-modal" class="w-full py-3 text-slate-400 font-bold text-sm">Chiudi</button>
             </div>
         </div>
     </div>
 
-    <!-- Fullscreen Loader -->
+    <!-- Fullscreen Export Loader -->
     <div id="fullscreen-loader" class="fixed inset-0 bg-white/95 z-[100] hidden flex-col items-center justify-center backdrop-blur-md">
-        <div class="loader border-indigo-600 border-t-transparent w-12 h-12 mb-4 border-4"></div>
-        <p class="text-lg font-black text-slate-900" data-i18n="pdf_loading_title">Creazione Manoscritto...</p>
-        <p class="text-sm text-slate-400 mt-2" data-i18n="pdf_loading_desc">Ottimizzazione layout di stampa...</p>
+        <div class="loader w-12 h-12 mb-4 border-4"></div>
+        <p class="text-lg font-black text-slate-900">Impaginazione PDF...</p>
     </div>
 
     <!-- Toast -->
-    <div id="status-message" class="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] md:w-80 p-4 rounded-2xl z-[120] shadow-2xl border flex items-center gap-3 bg-white"></div>
+    <div id="status-message" class="fixed top-6 w-[90%] md:w-80 p-4 rounded-2xl z-[120] shadow-2xl border flex items-center gap-3 bg-white"></div>
 
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center z-10 shrink-0">
         <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-indigo-200 shadow-lg">
                 <i class="fas fa-bolt text-white text-sm"></i>
             </div>
             <span class="font-black text-slate-900 tracking-tighter">KDP <span class="text-indigo-600">PRO</span></span>
         </div>
-        
-        <div class="flex items-center gap-2">
-            <select id="ui-lang-selector" class="bg-slate-50 border-none rounded-lg px-2 py-1 text-xs font-bold outline-none cursor-pointer">
-                <option value="it">🇮🇹 IT</option>
-                <option value="en">🇬🇧 EN</option>
-                <option value="es">🇪🇸 ES</option>
-                <option value="fr">🇫🇷 FR</option>
-            </select>
-            <button id="btn-open-settings" class="w-8 h-8 flex items-center justify-center text-slate-400"><i class="fas fa-cog"></i></button>
-        </div>
+        <button id="btn-open-settings" class="w-10 h-10 flex items-center justify-center text-slate-400 bg-slate-50 rounded-xl"><i class="fas fa-cog"></i></button>
     </header>
 
     <main class="flex flex-1 overflow-hidden relative">
         
-        <!-- Panel Editor -->
-        <div id="panel-editor" class="w-full md:w-[400px] bg-white overflow-y-auto scrollable-panel flex flex-col z-10">
+        <!-- Pannello Strumenti -->
+        <div id="panel-editor" class="w-full md:w-[400px] bg-white overflow-y-auto scrollable-panel flex flex-col z-10 border-r border-slate-100">
             <div class="p-5 space-y-6">
                 
-                <div class="space-y-4">
-                    <div class="flex items-center gap-3 mb-2">
-                        <span class="w-6 h-6 bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center">01</span>
-                        <h2 class="font-black text-slate-800" data-i18n="s1_title">Progetto</h2>
-                    </div>
-                    <div class="bg-slate-50 p-5 rounded-3xl space-y-4 border border-slate-100">
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2" data-i18n="s1_topic">Argomento</label>
-                            <input type="text" id="input-topic" class="w-full bg-white border-none rounded-2xl p-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="es. Yoga per principianti">
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2" data-i18n="s1_market">Lingua</label>
-                                <select id="select-language" class="w-full bg-white border-none rounded-xl p-3 text-xs font-bold shadow-sm">
-                                    <option value="Italiano" selected>Italiano</option>
-                                    <option value="English">English</option>
-                                    <option value="Español">Español</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2" data-i18n="s1_trim">Formato</label>
-                                <select id="select-trim" class="w-full bg-white border-none rounded-xl p-3 text-xs font-bold shadow-sm">
-                                    <option value="6x9">6 x 9 in</option>
-                                    <option value="5.5x8.5">5.5 x 8.5 in</option>
-                                    <option value="8.5x11">8.5 x 11 in</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex items-center gap-3 mb-2">
-                        <span class="w-6 h-6 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">02</span>
-                        <h2 class="font-black text-slate-800" data-i18n="s2_title">Analisi</h2>
-                    </div>
-                    <button id="btn-research" class="w-full bg-white border border-blue-100 p-5 rounded-3xl text-left hover:bg-blue-50 transition-all group relative overflow-hidden">
-                        <div class="flex justify-between items-center relative z-10">
-                            <div>
-                                <h3 class="font-black text-blue-900 text-sm" data-i18n="btn_research">Analizza Nicchia</h3>
-                                <p class="text-[10px] text-blue-400 mt-1" data-i18n="s2_desc">Trova problemi e soluzioni del target.</p>
-                            </div>
-                            <div id="loader-research" class="hidden loader text-blue-600"></div>
-                            <i class="fas fa-arrow-right text-blue-200 group-hover:translate-x-1 transition-transform"></i>
-                        </div>
-                    </button>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex items-center gap-3 mb-2">
-                        <span class="w-6 h-6 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">03</span>
-                        <h2 class="font-black text-slate-800" data-i18n="s4_title">Manoscritto</h2>
-                    </div>
-                    <button id="btn-toc" class="w-full bg-indigo-600 p-5 rounded-3xl text-left shadow-lg shadow-indigo-100 active:scale-[0.98] transition-all">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h3 class="font-black text-white text-sm" data-i18n="btn_toc">Genera Indice</h3>
-                                <p class="text-[10px] text-indigo-200 mt-1">Crea la struttura in 5 capitoli.</p>
-                            </div>
-                            <div id="loader-toc" class="hidden loader text-white"></div>
-                        </div>
-                    </button>
-                    <div id="chapters-manager" class="hidden space-y-3 pt-2">
-                        <div id="chapters-list" class="space-y-2"></div>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex items-center gap-3 mb-2">
-                        <span class="w-6 h-6 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">04</span>
-                        <h2 class="font-black text-slate-800" data-i18n="s6_title">Marketing</h2>
+                <!-- SETUP -->
+                <div class="bg-slate-50 p-5 rounded-3xl space-y-4">
+                    <h2 class="font-black text-slate-800 text-sm flex items-center gap-2"><i class="fas fa-project-diagram text-indigo-500"></i> PROGETTO</h2>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">Argomento del Libro</label>
+                        <input type="text" id="input-topic" class="w-full bg-white border-none rounded-2xl p-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="es. Cucina Vegana Veloce">
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <button id="btn-cover" class="bg-white border border-amber-100 p-4 rounded-3xl text-center active:scale-95 transition-all">
-                            <i class="fas fa-image text-amber-500 mb-2 block text-lg"></i>
-                            <span class="text-[10px] font-black uppercase text-amber-900" data-i18n="btn_cover">Cover AI</span>
-                            <div id="loader-cover" class="hidden loader text-amber-500 block mx-auto mt-1"></div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">Formato</label>
+                            <select id="select-trim" class="w-full bg-white border-none rounded-xl p-3 text-xs font-bold shadow-sm">
+                                <option value="6x9">6 x 9 in</option>
+                                <option value="8.5x11">8.5 x 11 in</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">Pagine Est.</label>
+                            <input type="number" id="input-pages" class="w-full bg-white border-none rounded-xl p-3 text-xs font-bold shadow-sm" value="100">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AZIONI -->
+                <div class="space-y-3">
+                    <button id="btn-research" class="w-full bg-white border border-slate-200 p-5 rounded-3xl text-left hover:border-indigo-200 transition-all flex justify-between items-center group">
+                        <div>
+                            <h3 class="font-black text-slate-800 text-sm">1. Analizza Mercato</h3>
+                            <p class="text-[10px] text-slate-400 mt-1">Trova i problemi del tuo target.</p>
+                        </div>
+                        <i class="fas fa-search text-slate-200 group-hover:text-indigo-500 transition-colors"></i>
+                    </button>
+
+                    <button id="btn-toc" class="w-full bg-indigo-600 p-5 rounded-3xl text-left shadow-lg shadow-indigo-100 active:scale-95 transition-all flex justify-between items-center text-white">
+                        <div>
+                            <h3 class="font-black text-sm">2. Genera Indice</h3>
+                            <p class="text-[10px] text-indigo-200 mt-1">Crea la struttura del manoscritto.</p>
+                        </div>
+                        <i class="fas fa-list-ul"></i>
+                    </button>
+
+                    <div id="chapters-manager" class="hidden space-y-2 pt-2">
+                        <div id="chapters-list" class="space-y-2"></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-4">
+                        <button id="btn-cover" class="bg-slate-900 text-white p-4 rounded-3xl text-center active:scale-95 transition-all">
+                            <i class="fas fa-image text-amber-400 mb-2 block"></i>
+                            <span class="text-[10px] font-black uppercase">Cover AI</span>
                         </button>
-                        <button id="btn-seo" class="bg-white border border-amber-100 p-4 rounded-3xl text-center active:scale-95 transition-all">
-                            <i class="fab fa-amazon text-amber-500 mb-2 block text-lg"></i>
-                            <span class="text-[10px] font-black uppercase text-amber-900" data-i18n="btn_seo">SEO KDP</span>
-                            <div id="loader-seo" class="hidden loader text-amber-500 block mx-auto mt-1"></div>
+                        <button id="btn-seo" class="bg-amber-400 text-amber-950 p-4 rounded-3xl text-center active:scale-95 transition-all">
+                            <i class="fab fa-amazon mb-2 block"></i>
+                            <span class="text-[10px] font-black uppercase">SEO KDP</span>
                         </button>
                     </div>
                 </div>
 
-                <button id="btn-reset-project" class="w-full py-4 text-xs font-bold text-slate-400 bg-slate-100 rounded-2xl" data-i18n="btn_reset">Nuovo Progetto</button>
+                <button id="btn-reset-project" class="w-full py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 rounded-2xl mt-10">Reset Totale</button>
             </div>
         </div>
 
-        <!-- Panel Preview -->
+        <!-- Pannello Anteprima -->
         <div id="panel-preview" class="flex-1 bg-slate-100 p-4 md:p-10 overflow-y-auto scrollable-panel hidden md:flex justify-center preview-container">
             <div id="book-export-area" class="bg-white w-[850px] min-h-[1100px] shadow-2xl p-16 book-content relative shrink-0">
-                <div id="kdp-backend-page" class="kdp-backend-only hidden bg-slate-50 p-8 rounded-3xl border border-slate-200 mb-10">
-                    <h2 class="text-slate-900 font-black mb-6 flex items-center"><i class="fab fa-amazon mr-2 text-indigo-600"></i> <span data-i18n="kdp_title">Dashboard KDP</span></h2>
-                    <div class="space-y-6 text-sm">
-                        <div><label class="font-black text-[10px] uppercase text-slate-400 block mb-2" data-i18n="kdp_lbl_title">Titolo</label><div id="seo-title" class="bg-white p-4 rounded-2xl border border-slate-100 font-bold">...</div></div>
-                        <div><label class="font-black text-[10px] uppercase text-slate-400 block mb-2" data-i18n="kdp_lbl_sub">Sottotitolo</label><div id="seo-subtitle" class="bg-white p-4 rounded-2xl border border-slate-100">...</div></div>
-                        <div><label class="font-black text-[10px] uppercase text-slate-400 block mb-2" data-i18n="kdp_lbl_kw">Keyword</label><div id="seo-keywords" class="flex flex-wrap gap-2"></div></div>
-                        <div><label class="font-black text-[10px] uppercase text-slate-400 block mb-2" data-i18n="kdp_lbl_desc">Descrizione HTML</label><div id="seo-desc" class="bg-slate-900 text-indigo-300 p-4 rounded-2xl font-mono text-xs whitespace-pre-wrap overflow-y-auto max-h-40">...</div></div>
+                
+                <!-- DASHBOARD SEO -->
+                <div id="kdp-backend-page" class="kdp-backend-only hidden bg-indigo-50 p-8 rounded-3xl border border-indigo-100 mb-10">
+                    <h2 class="text-indigo-900 font-black mb-6 flex items-center gap-2"><i class="fab fa-amazon"></i> Metadati KDP</h2>
+                    <div class="space-y-4 text-xs">
+                        <div><label class="font-black text-slate-400 uppercase block mb-1">Titolo</label><div id="seo-title" class="bg-white p-3 rounded-xl border border-indigo-100 font-bold"></div></div>
+                        <div><label class="font-black text-slate-400 uppercase block mb-1">Sottotitolo</label><div id="seo-subtitle" class="bg-white p-3 rounded-xl border border-indigo-100"></div></div>
+                        <div><label class="font-black text-slate-400 uppercase block mb-1">Keyword</label><div id="seo-keywords" class="flex flex-wrap gap-2"></div></div>
+                        <div><label class="font-black text-slate-400 uppercase block mb-1">Descrizione HTML</label><div id="seo-desc" class="bg-slate-900 text-indigo-300 p-4 rounded-xl font-mono text-[10px] whitespace-pre-wrap overflow-y-auto max-h-40"></div></div>
                     </div>
                 </div>
 
-                <div id="cover-page" class="page-break flex flex-col items-center justify-center min-h-[900px] relative overflow-hidden bg-slate-50 rounded-lg border border-slate-100">
+                <!-- PAGINA COPERTINA -->
+                <div id="cover-page" class="page-break flex flex-col items-center justify-center min-h-[900px] relative overflow-hidden bg-slate-50 border border-slate-100 rounded-lg">
                     <div id="cover-placeholder" class="text-center z-10 p-10">
-                        <i class="fas fa-book-open text-8xl text-slate-200 mb-8"></i>
-                        <h1 id="preview-title" class="text-5xl font-black text-slate-900" data-i18n="prev_cov_title">Il Tuo Libro</h1>
-                        <p id="preview-author" class="text-2xl mt-6 text-indigo-600 font-bold uppercase tracking-widest" data-i18n="prev_cov_auth">Nome Autore</p>
+                        <i class="fas fa-book-open text-7xl text-slate-200 mb-6"></i>
+                        <h1 id="preview-title" class="text-5xl font-black text-slate-900 uppercase">Titolo Libro</h1>
+                        <p id="preview-author" class="text-xl mt-6 text-indigo-600 font-bold uppercase tracking-widest">Nome Autore</p>
                     </div>
                 </div>
 
+                <!-- PAGINA INDICE -->
                 <div id="toc-page" class="page-break hidden pt-20">
-                    <h1 class="text-4xl font-black text-slate-900 mb-12" data-i18n="toc_title">Indice</h1>
+                    <h1 class="text-4xl font-black text-slate-900 mb-12 border-b-8 border-slate-100 pb-4">Indice</h1>
                     <div id="toc-content" class="text-xl space-y-4"></div>
                 </div>
 
+                <!-- MANOSCRITTO -->
                 <div id="manuscript-content" class="mt-20">
                     <div id="empty-manuscript-msg" class="text-center py-40 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                        <i class="fas fa-pencil-alt text-4xl text-slate-200 mb-4"></i>
-                        <p class="font-black text-slate-400" data-i18n="empty_p1">Manoscritto vuoto.</p>
+                        <i class="fas fa-pen-nib text-4xl text-slate-200 mb-4"></i>
+                        <p class="font-black text-slate-400">Il tuo capolavoro inizia qui.</p>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Mobile Navigation -->
-    <div class="md:hidden bg-white border-t border-slate-200 grid grid-cols-3 shrink-0 fixed bottom-0 w-full z-50 safe-area-bottom px-2 pt-2 pb-6">
+    <!-- Navigazione Mobile -->
+    <div class="md:hidden bg-white border-t border-slate-200 grid grid-cols-3 shrink-0 fixed bottom-0 w-full z-50 px-2 pt-2 pb-8">
         <button id="tab-editor" class="flex flex-col items-center justify-center py-2 text-indigo-600">
-            <i class="fas fa-magic text-xl mb-1"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter" data-i18n="tab_tools">Strumenti</span>
+            <i class="fas fa-wand-sparkles text-xl mb-1"></i>
+            <span class="text-[9px] font-black uppercase">Crea</span>
         </button>
         <button id="tab-preview" class="flex flex-col items-center justify-center py-2 text-slate-400">
-            <i class="fas fa-book-open text-xl mb-1"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter" data-i18n="tab_preview">Anteprima</span>
+            <i class="fas fa-eye text-xl mb-1"></i>
+            <span class="text-[9px] font-black uppercase">Anteprima</span>
         </button>
         <button id="mobile-export-pdf" class="flex flex-col items-center justify-center py-2 text-slate-400">
             <i class="fas fa-file-pdf text-xl mb-1"></i>
-            <span class="text-[9px] font-black uppercase tracking-tighter" data-i18n="btn_export">Salva</span>
+            <span class="text-[9px] font-black uppercase">Salva</span>
         </button>
     </div>
 
     <script>
-        const apiKey = ""; // Gestito automaticamente o tramite settings
+        // Configurazione
+        let state = { topic: "", trim: "6x9", chapters: [], coverUrl: "", seoData: null, penName: "Autore Pro" };
 
-        const i18n = {
-            it: {
-                btn_export: "Salva PDF", btn_reset: "Reset Progetto", pdf_loading_title: "Ottimizzazione...", pdf_loading_desc: "Creazione layout professionale...",
-                s1_title: "Progetto", s1_topic: "Argomento", s1_topic_ph: "es. Dieta Keto", s1_market: "Lingua", s1_trim: "Formato", s1_pages: "Pagine",
-                s2_title: "Analisi", s2_desc: "Trova gap e target.", btn_research: "Analizza Nicchia",
-                btn_marketing: "Crea Autore", s4_title: "Manoscritto", btn_toc: "Genera Indice",
-                s6_title: "Lancio", btn_cover: "Copertina AI", btn_seo: "SEO KDP",
-                kdp_title: "Dati KDP", kdp_lbl_title: "Titolo", kdp_lbl_sub: "Sottotitolo", kdp_lbl_kw: "Keyword", kdp_lbl_desc: "Descrizione HTML",
-                prev_cov_title: "Il Tuo Libro", prev_cov_auth: "Autore", toc_title: "Indice",
-                empty_p1: "Inizia a scrivere...", tab_tools: "Strumenti", tab_preview: "Anteprima",
-                js_msg_copy: "Copiato!", js_msg_err: "Errore!", js_txt_btn: "Scrivi", js_img_btn: "Immagine"
-            },
-            en: {
-                btn_export: "Save PDF", btn_reset: "Reset Project", pdf_loading_title: "Optimizing...", pdf_loading_desc: "Creating professional layout...",
-                s1_title: "Project", s1_topic: "Topic", s1_topic_ph: "e.g. Keto Diet", s1_market: "Language", s1_trim: "Trim", s1_pages: "Pages",
-                s2_title: "Analysis", s2_desc: "Find gap and target.", btn_research: "Analyze Niche",
-                btn_marketing: "Create Author", s4_title: "Manuscript", btn_toc: "Generate TOC",
-                s6_title: "Launch", btn_cover: "AI Cover", btn_seo: "KDP SEO",
-                kdp_title: "KDP Data", kdp_lbl_title: "Title", kdp_lbl_sub: "Subtitle", kdp_lbl_kw: "Keywords", kdp_lbl_desc: "HTML Description",
-                prev_cov_title: "Your Book", prev_cov_auth: "Author", toc_title: "Contents",
-                empty_p1: "Start writing...", tab_tools: "Tools", tab_preview: "Preview",
-                js_msg_copy: "Copied!", js_msg_err: "Error!", js_txt_btn: "Write", js_img_btn: "Image"
+        // Funzione per la gestione delle chiamate API
+        async function callGemini(prompt, isJson = false) {
+            const key = localStorage.getItem('kdp_gemini_key');
+            if (!key) { 
+                document.getElementById('api-key-modal').classList.remove('hidden');
+                document.getElementById('api-key-modal').classList.add('flex');
+                throw new Error("API Key mancante"); 
             }
-        };
 
-        let state = {
-            topic: "", language: "Italiano", trim: "6x9", pages: 100, penName: "", 
-            research: "", chapters: [], artStyle: "", character: "", 
-            coverUrl: "", seoData: null, uiLang: "it"
-        };
-
-        function updateUILanguage(lang) {
-            state.uiLang = i18n[lang] ? lang : 'it';
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                el.innerText = i18n[state.uiLang][key] || i18n['en'][key] || key;
-            });
-            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-                const key = el.getAttribute('data-i18n-ph');
-                el.placeholder = i18n[state.uiLang][key] || i18n['en'][key] || key;
-            });
-            if (state.chapters.length > 0) renderChaptersManager();
-        }
-
-        async function apiFetch(url, payload, retry = 0) {
-            try {
-                const response = await fetch(url, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
-                });
-                
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    console.error("API Error Status:", response.status, errData);
-                    if (response.status === 401 || response.status === 403) throw new Error("AUTH");
-                    if (response.status === 404) throw new Error("MODEL_NOT_FOUND");
-                    throw new Error(`API Error: ${response.status}`);
-                }
-                return await response.json();
-            } catch (e) {
-                if (e.message === "AUTH") {
-                    localStorage.removeItem('kdp_gemini_key');
-                    openApiModal("Chiave API non valida o permessi insufficienti.");
-                    throw e;
-                }
-                if (retry < 5) {
-                    const delay = Math.pow(2, retry) * 1000;
-                    await new Promise(r => setTimeout(r, delay));
-                    return apiFetch(url, payload, retry + 1);
-                }
-                throw e;
-            }
-        }
-
-        function getActiveKey() {
-            return localStorage.getItem('kdp_gemini_key') || apiKey;
-        }
-
-        async function fetchGemini(prompt, isJson = false) {
-            const key = getActiveKey();
-            if (!key) { openApiModal(); throw new Error("Key missing"); }
-            
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
+            // Utilizzo del modello stabile 1.5-flash per evitare errori 404 frequenti sui modelli preview
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
             
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: isJson ? "Rispondi esclusivamente in formato JSON valido, senza blocchi markdown o testo aggiuntivo." : "Sei un autore KDP professionista. Usa il markdown." }] }
+                generationConfig: isJson ? { responseMimeType: "application/json" } : {}
             };
 
-            if (isJson) {
-                payload.generationConfig = { responseMimeType: "application/json" };
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                if (response.status === 404) throw new Error("Errore 404: Modello non trovato. Controlla la chiave API.");
+                throw new Error("Errore API: " + response.status);
             }
 
-            const result = await apiFetch(url, payload);
-            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!text) throw new Error("Risposta vuota dall'AI");
-            return isJson ? JSON.parse(text) : text;
+            const data = await response.json();
+            const result = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            return isJson ? JSON.parse(result) : result;
         }
 
-        async function fetchImagen(promptText) {
-            const key = getActiveKey();
-            if (!key) { openApiModal(); throw new Error("Key missing"); }
+        // Funzione per le immagini
+        async function callImagen(promptText) {
+            const key = localStorage.getItem('kdp_gemini_key');
+            // Nota: Imagen 4.0 richiede permessi specifici su GCP. Usiamo un fallback se non disponibile.
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${key}`;
+            const payload = { instances: [{ prompt: promptText }], parameters: { sampleCount: 1 } };
             
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${key}`;
-            
-            const payload = { 
-                instances: { prompt: promptText }, 
-                parameters: { sampleCount: 1 } 
-            };
-            
-            const result = await apiFetch(url, payload);
-            const base64 = result.predictions?.[0]?.bytesBase64Encoded;
-            if (!base64) throw new Error("Generazione immagine fallita.");
-            return `data:image/png;base64,${base64}`;
-        }
-
-        function toggleMagic(show) {
-            const loader = document.getElementById('magic-loader');
-            if (show) {
-                loader.classList.remove('hidden');
-                loader.classList.add('flex');
-            } else {
-                loader.classList.add('hidden');
-                loader.classList.remove('flex');
+            try {
+                const response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+                const data = await response.json();
+                return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+            } catch (e) {
+                showToast("Generazione immagine non disponibile per questa chiave.", true);
+                return null;
             }
         }
 
+        // --- AZIONI ---
+
+        // Analisi di Mercato
         document.getElementById('btn-research').addEventListener('click', async () => {
             const topic = document.getElementById('input-topic').value;
-            if (!topic) return showToast("Inserisci un titolo!", true);
+            if (!topic) return showToast("Inserisci un argomento!", true);
+            
             toggleMagic(true);
             try {
-                const prompt = `Analisi mercato Amazon per un libro su: "${topic}" in ${state.language}. Trova gap e target. JSON: {"audience": "...", "angle": "...", "keywords": ["..."]}`;
-                const res = await fetchGemini(prompt, true);
-                state.research = JSON.stringify(res);
+                const prompt = `Analisi di mercato Amazon per un libro su: "${topic}". Identifica: Target Audience, Problemi Principali (Pain Points), Angolo di vendita unico. Rispondi in Italiano. JSON: {"audience": "...", "pain_points": "...", "angle": "..."}`;
+                const res = await callGemini(prompt, true);
+                document.getElementById('kdp-backend-page').classList.remove('hidden');
+                document.getElementById('seo-title').innerText = topic;
                 showToast("Analisi completata!");
                 saveState();
-            } catch (e) { 
-                showToast(e.message === "MODEL_NOT_FOUND" ? "Modello non trovato. Verifica la chiave." : e.message, true); 
-            }
-            toggleMagic(false);
-        });
-
-        document.getElementById('btn-toc').addEventListener('click', async () => {
-            const topic = document.getElementById('input-topic').value;
-            if (!topic) return showToast("Inserisci un titolo!", true);
-            toggleMagic(true);
-            try {
-                const prompt = `Crea un indice KDP di 5 capitoli per "${topic}" in ${state.language}. Solo nomi capitoli in array JSON: ["Cap 1", "Cap 2", ...]`;
-                const list = await fetchGemini(prompt, true);
-                state.chapters = list.map(title => ({ title, content: "" }));
-                renderChaptersManager();
-                renderTOC();
-                document.getElementById('empty-manuscript-msg').classList.add('hidden');
-                saveState();
-                showToast("Indice generato!");
             } catch (e) { showToast(e.message, true); }
             toggleMagic(false);
         });
 
+        // Generazione Indice
+        document.getElementById('btn-toc').addEventListener('click', async () => {
+            const topic = document.getElementById('input-topic').value;
+            if (!topic) return showToast("Inserisci un argomento!", true);
+            
+            toggleMagic(true);
+            try {
+                const prompt = `Crea un indice di 5 capitoli per un libro intitolato "${topic}". Rispondi SOLO con un array JSON di stringhe in Italiano: ["Cap 1", "Cap 2", ...]`;
+                const list = await callGemini(prompt, true);
+                state.chapters = list.map(title => ({ title, content: "" }));
+                renderChapters();
+                renderTOC();
+                document.getElementById('empty-manuscript-msg').classList.add('hidden');
+                showToast("Indice generato!");
+                saveState();
+            } catch (e) { showToast(e.message, true); }
+            toggleMagic(false);
+        });
+
+        // Scrittura Capitolo
         window.writeChapter = async (idx) => {
             toggleMagic(true);
             try {
-                const prompt = `Scrivi il capitolo "${state.chapters[idx].title}" per il libro "${document.getElementById('input-topic').value}". Lingua: ${state.language}. Usa markdown professionale. 800 parole.`;
-                const text = await fetchGemini(prompt);
+                const topic = document.getElementById('input-topic').value;
+                const prompt = `Sei un autore KDP. Scrivi il capitolo "${state.chapters[idx].title}" per il libro "${topic}". Usa un tono professionale, markdown, circa 700 parole. Scrivi in Italiano.`;
+                const text = await callGemini(prompt);
                 state.chapters[idx].content = marked.parse(text);
                 renderManuscript();
-                saveState();
                 showToast("Capitolo pronto!");
+                saveState();
             } catch (e) { showToast(e.message, true); }
             toggleMagic(false);
         };
 
-        function renderChaptersManager() {
+        // --- UI E UTILS ---
+
+        function toggleMagic(show) {
+            document.getElementById('magic-loader').classList.toggle('hidden', !show);
+            if (show) document.getElementById('magic-loader').classList.add('flex');
+            else document.getElementById('magic-loader').classList.remove('flex');
+        }
+
+        function showToast(msg, error = false) {
+            const t = document.getElementById('status-message');
+            t.innerHTML = `<i class="fas ${error ? 'fa-times-circle text-red-500' : 'fa-check-circle text-emerald-500'}"></i> <span class="text-xs font-bold">${msg}</span>`;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function renderChapters() {
             const list = document.getElementById('chapters-list');
             list.innerHTML = "";
             document.getElementById('chapters-manager').classList.remove('hidden');
-            state.chapters.forEach((chap, i) => {
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100";
-                div.innerHTML = `
-                    <div class="flex-1 pr-3">
-                        <span class="text-[10px] text-slate-400 block font-bold">CAP ${i+1}</span>
-                        <span class="text-xs font-black text-slate-800">${chap.title}</span>
-                    </div>
-                    <button onclick="writeChapter(${i})" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase">Scrivi</button>
-                `;
-                list.appendChild(div);
+            state.chapters.forEach((c, i) => {
+                const d = document.createElement('div');
+                d.className = "flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100";
+                d.innerHTML = `<div class="text-xs font-bold truncate pr-2">${i+1}. ${c.title}</div><button onclick="writeChapter(${i})" class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase">Scrivi</button>`;
+                list.appendChild(d);
             });
         }
 
         function renderTOC() {
             document.getElementById('toc-page').classList.remove('hidden');
-            document.getElementById('toc-content').innerHTML = state.chapters.map((c, i) => `<div class="flex justify-between border-b border-slate-100 pb-2"><span>${i+1}. ${c.title}</span></div>`).join("");
+            document.getElementById('toc-content').innerHTML = state.chapters.map((c, i) => `<div>${i+1}. ${c.title}</div>`).join("");
         }
 
         function renderManuscript() {
@@ -494,165 +392,67 @@
             ms.innerHTML = state.chapters.map((c, i) => `
                 <div class="page-break">
                     <h2 class="text-3xl font-black text-slate-900 border-b-4 border-slate-900 pb-4 mb-8">Capitolo ${i+1}: ${c.title}</h2>
-                    <div class="prose prose-slate max-w-none">${c.content || "<i>Contenuto in attesa...</i>"}</div>
+                    <div class="prose prose-slate max-w-none">${c.content || "<i>Contenuto da generare...</i>"}</div>
                 </div>
             `).join("");
         }
 
-        document.getElementById('btn-cover').addEventListener('click', async () => {
-            const topic = document.getElementById('input-topic').value;
-            if (!topic) return showToast("Inserisci un titolo!", true);
-            toggleMagic(true);
-            try {
-                const p = `High quality professional book cover illustration for "${topic}", minimalist design, no text, cinematic lighting.`;
-                const url = await fetchImagen(p);
-                state.coverUrl = url;
-                document.getElementById('cover-page').innerHTML = `
-                    <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${url}')"></div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                    <div class="relative z-10 p-10 mt-auto text-center w-full">
-                        <h1 class="text-5xl font-black text-white leading-tight drop-shadow-lg">${topic}</h1>
-                        <p class="text-2xl font-black text-indigo-400 mt-4 uppercase tracking-[0.3em]">${state.penName || 'Author'}</p>
-                    </div>`;
-                saveState();
-                showToast("Copertina pronta!");
-            } catch (e) { showToast(e.message, true); }
-            toggleMagic(false);
-        });
-
-        document.getElementById('btn-seo').addEventListener('click', async () => {
-            const topic = document.getElementById('input-topic').value;
-            if (!topic) return showToast("Inserisci un titolo!", true);
-            toggleMagic(true);
-            try {
-                const prompt = `Genera Metadata KDP per: "${topic}". JSON: {"title": "...", "subtitle": "...", "keywords": ["..."], "desc": "HTML formatted AIDA description"}`;
-                const res = await fetchGemini(prompt, true);
-                state.seoData = res;
-                document.getElementById('kdp-backend-page').classList.remove('hidden');
-                document.getElementById('seo-title').innerText = res.title;
-                document.getElementById('seo-subtitle').innerText = res.subtitle;
-                document.getElementById('seo-keywords').innerHTML = res.keywords.map(k => `<span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-bold">${k}</span>`).join("");
-                document.getElementById('seo-desc').innerText = res.desc;
-                saveState();
-                showToast("SEO completato!");
-            } catch (e) { showToast(e.message, true); }
-            toggleMagic(false);
-        });
-
-        function showToast(msg, error = false) {
-            const t = document.getElementById('status-message');
-            t.innerHTML = `<i class="fas ${error ? 'fa-exclamation-circle text-red-500' : 'fa-check-circle text-emerald-500'}"></i> <span class="text-xs font-bold">${msg}</span>`;
-            t.classList.add('show', 'flex');
-            t.classList.remove('hidden');
-            setTimeout(() => {
-                t.classList.remove('show');
-                setTimeout(() => t.classList.add('hidden'), 300);
-            }, 3000);
-        }
-
-        function openApiModal(msg = "") {
-            document.getElementById('api-key-modal').classList.remove('hidden');
-            document.getElementById('api-key-modal').classList.add('flex');
-            if (msg) document.getElementById('api-modal-msg').innerText = msg;
-        }
-
-        document.getElementById('btn-save-api-key').addEventListener('click', () => {
-            const v = document.getElementById('input-api-key').value.trim();
-            if (v) { 
-                localStorage.setItem('kdp_gemini_key', v); 
-                document.getElementById('api-key-modal').classList.add('hidden'); 
-                showToast("AI Collegata!"); 
-            }
-        });
-
-        document.getElementById('btn-close-api-modal').addEventListener('click', () => document.getElementById('api-key-modal').classList.add('hidden'));
-
-        function saveState() {
-            state.topic = document.getElementById('input-topic').value;
-            state.language = document.getElementById('select-language').value;
-            localStorage.setItem('kdp_mobile_state', JSON.stringify(state));
-        }
-
-        function loadState() {
-            const s = localStorage.getItem('kdp_mobile_state');
-            if (s) {
-                state = { ...state, ...JSON.parse(s) };
-                document.getElementById('input-topic').value = state.topic;
-                document.getElementById('select-language').value = state.language;
-                if (state.chapters.length > 0) {
-                    renderChaptersManager(); renderTOC(); renderManuscript();
-                    document.getElementById('empty-manuscript-msg').classList.add('hidden');
-                }
-            }
-        }
-
-        function switchTab(tab) {
-            const editor = document.getElementById('panel-editor');
-            const preview = document.getElementById('panel-preview');
-            const tabE = document.getElementById('tab-editor');
-            const tabP = document.getElementById('tab-preview');
-
-            if (tab === 'editor') {
-                editor.classList.remove('hidden');
-                preview.classList.add('hidden');
-                tabE.classList.add('text-indigo-600');
-                tabE.classList.remove('text-slate-400');
-                tabP.classList.remove('text-indigo-600');
-                tabP.classList.add('text-slate-400');
-            } else {
-                editor.classList.add('hidden');
-                preview.classList.remove('hidden');
-                preview.classList.add('flex');
-                tabP.classList.add('text-indigo-600');
-                tabP.classList.remove('text-slate-400');
-                tabE.classList.remove('text-indigo-600');
-                tabE.classList.add('text-slate-400');
-            }
-        }
-
-        document.getElementById('tab-editor').addEventListener('click', () => switchTab('editor'));
-        document.getElementById('tab-preview').addEventListener('click', () => switchTab('preview'));
-        document.getElementById('btn-open-settings').addEventListener('click', () => openApiModal());
-
+        // Export PDF
         const exportPdf = () => {
-            const loader = document.getElementById('fullscreen-loader');
-            loader.classList.remove('hidden'); loader.classList.add('flex');
+            document.getElementById('fullscreen-loader').classList.remove('hidden');
+            document.getElementById('fullscreen-loader').classList.add('flex');
             const area = document.getElementById('book-export-area');
-            const backend = document.querySelectorAll('.kdp-backend-only');
-            backend.forEach(el => el.style.display = 'none');
-            const originalTransform = area.style.transform;
-            area.style.transform = 'none';
+            document.querySelectorAll('.kdp-backend-only').forEach(el => el.style.display = 'none');
+            
+            area.style.transform = 'none'; // Reset scale per l'export
 
-            const opt = {
-                margin: 0, filename: 'kdp_pro_manuscript.pdf',
+            html2pdf().set({
+                margin: 0, filename: 'manoscritto_kdp.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(area).save().then(() => {
-                backend.forEach(el => el.style.display = 'block');
-                area.style.transform = originalTransform;
-                loader.classList.add('hidden');
-                showToast("PDF Salvato!");
-            }).catch(err => {
-                loader.classList.add('hidden');
-                showToast("Errore PDF", true);
+            }).from(area).save().then(() => {
+                location.reload(); // Semplice reset post export
             });
         };
 
-        const mobileExportPdf = document.getElementById('mobile-export-pdf');
-        if (mobileExportPdf) mobileExportPdf.addEventListener('click', exportPdf);
-
-        document.getElementById('ui-lang-selector').addEventListener('change', e => updateUILanguage(e.target.value));
-        document.getElementById('btn-reset-project').addEventListener('click', () => {
-            if(confirm("Vuoi cancellare tutto e ricominciare?")) {
-                localStorage.removeItem('kdp_mobile_state');
-                location.reload();
-            }
+        // Event Listeners
+        document.getElementById('tab-editor').addEventListener('click', () => {
+            document.getElementById('panel-editor').classList.remove('hidden');
+            document.getElementById('panel-preview').classList.add('hidden');
+            document.getElementById('tab-editor').classList.add('text-indigo-600');
+            document.getElementById('tab-preview').classList.replace('text-indigo-600', 'text-slate-400');
         });
 
-        window.onload = () => { loadState(); updateUILanguage('it'); };
+        document.getElementById('tab-preview').addEventListener('click', () => {
+            document.getElementById('panel-editor').classList.add('hidden');
+            document.getElementById('panel-preview').classList.remove('hidden');
+            document.getElementById('panel-preview').classList.add('flex');
+            document.getElementById('tab-preview').classList.add('text-indigo-600');
+            document.getElementById('tab-editor').classList.replace('text-indigo-600', 'text-slate-400');
+        });
+
+        document.getElementById('mobile-export-pdf').addEventListener('click', exportPdf);
+        document.getElementById('btn-open-settings').addEventListener('click', () => document.getElementById('api-key-modal').classList.remove('hidden'));
+        document.getElementById('btn-close-api-modal').addEventListener('click', () => document.getElementById('api-key-modal').classList.add('hidden'));
+        document.getElementById('btn-save-api-key').addEventListener('click', () => {
+            const v = document.getElementById('input-api-key').value.trim();
+            if (v) { localStorage.setItem('kdp_gemini_key', v); document.getElementById('api-key-modal').classList.add('hidden'); showToast("Chiave salvata!"); }
+        });
+
+        function saveState() {
+            state.topic = document.getElementById('input-topic').value;
+            localStorage.setItem('kdp_state_it', JSON.stringify(state));
+        }
+
+        window.onload = () => {
+            const saved = localStorage.getItem('kdp_state_it');
+            if (saved) {
+                state = JSON.parse(saved);
+                document.getElementById('input-topic').value = state.topic;
+                if (state.chapters.length > 0) { renderChapters(); renderTOC(); renderManuscript(); document.getElementById('empty-manuscript-msg').classList.add('hidden'); }
+            }
+        };
     </script>
 </body>
 </html>
