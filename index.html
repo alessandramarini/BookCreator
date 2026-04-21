@@ -328,6 +328,16 @@
                 prev_cov_title: "Your Book", prev_cov_auth: "Author", toc_title: "Contents",
                 empty_p1: "Start writing...", tab_tools: "Tools", tab_preview: "Preview",
                 js_msg_copy: "Copied!", js_msg_err: "Error!", js_txt_btn: "Write", js_img_btn: "Image"
+            },
+            es: {
+                btn_export: "Guardar PDF", btn_reset: "Reiniciar", s1_title: "Proyecto", s1_topic: "Tema", btn_research: "Analizar", 
+                s4_title: "Manuscrito", btn_toc: "Generar Índice", btn_cover: "Portada AI", btn_seo: "SEO KDP",
+                prev_cov_title: "Tu Libro", toc_title: "Índice", tab_tools: "Herramientas", tab_preview: "Vista Previa"
+            },
+            fr: {
+                btn_export: "Enregistrer PDF", btn_reset: "Réinitialiser", s1_title: "Projet", s1_topic: "Sujet", btn_research: "Analyser", 
+                s4_title: "Manuscrit", btn_toc: "Générer Sommaire", btn_cover: "Couverture AI", btn_seo: "SEO KDP",
+                prev_cov_title: "Votre Livre", toc_title: "Sommaire", tab_tools: "Outils", tab_preview: "Aperçu"
             }
         };
 
@@ -354,11 +364,19 @@
         async function apiFetch(url, payload, retry = 0) {
             try {
                 const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? "AUTH" : `API Error: ${response.status}`);
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    console.error("API Error Detail:", errData);
+                    throw new Error(response.status === 401 || response.status === 403 ? "AUTH" : `API Error: ${response.status}`);
+                }
                 return await response.json();
             } catch (e) {
                 if (e.message === "AUTH") { localStorage.removeItem('kdp_gemini_key'); openApiModal("Chiave API non valida."); throw e; }
-                if (retry < 3) { await new Promise(r => setTimeout(r, 2000 * (retry + 1))); return apiFetch(url, payload, retry + 1); }
+                if (retry < 5) { 
+                    const delay = Math.pow(2, retry) * 1000;
+                    await new Promise(r => setTimeout(r, delay)); 
+                    return apiFetch(url, payload, retry + 1); 
+                }
                 throw e;
             }
         }
@@ -379,12 +397,16 @@
             return isJson ? JSON.parse(text) : text;
         }
 
-        async function fetchImagen(prompt) {
+        async function fetchImagen(promptText) {
             const key = getActiveKey();
+            if (!key) { openApiModal(); throw new Error("Key missing"); }
             const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${key}`;
-            const payload = { instances: [{ prompt }], parameters: { sampleCount: 1, aspectRatio: "3:4" } };
+            const payload = { 
+                instances: { prompt: promptText }, 
+                parameters: { sampleCount: 1 } 
+            };
             const data = await apiFetch(url, payload);
-            if (!data.predictions?.[0]?.bytesBase64Encoded) throw new Error("Image error");
+            if (!data.predictions?.[0]?.bytesBase64Encoded) throw new Error("Image generation failed");
             return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
         }
 
@@ -486,17 +508,19 @@
 
         // --- MARKETING ---
         document.getElementById('btn-cover').addEventListener('click', async () => {
+            const topic = document.getElementById('input-topic').value;
+            if (!topic) return showToast("Inserisci un titolo!", true);
             toggleLoader('cover', true);
             toggleMagic(true);
             try {
-                const p = `High quality book cover for "${document.getElementById('input-topic').value}", professional design, minimal, no text.`;
+                const p = `High quality book cover for "${topic}", professional design, minimal, no text.`;
                 const url = await fetchImagen(p);
                 state.coverUrl = url;
                 document.getElementById('cover-page').innerHTML = `
                     <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${url}')"></div>
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                     <div class="relative z-10 p-10 mt-auto text-center w-full">
-                        <h1 class="text-6xl font-black text-white leading-tight drop-shadow-lg">${document.getElementById('input-topic').value}</h1>
+                        <h1 class="text-6xl font-black text-white leading-tight drop-shadow-lg">${topic}</h1>
                         <p class="text-2xl font-black text-indigo-400 mt-4 uppercase tracking-[0.3em]">${state.penName || 'Author'}</p>
                     </div>`;
                 saveState();
@@ -507,10 +531,12 @@
         });
 
         document.getElementById('btn-seo').addEventListener('click', async () => {
+            const topic = document.getElementById('input-topic').value;
+            if (!topic) return showToast("Inserisci un titolo!", true);
             toggleLoader('seo', true);
             toggleMagic(true);
             try {
-                const prompt = `Genera Metadata KDP per: "${document.getElementById('input-topic').value}". JSON: {"title": "...", "subtitle": "...", "keywords": ["..."], "desc": "HTML formatted AIDA description"}`;
+                const prompt = `Genera Metadata KDP per: "${topic}". JSON: {"title": "...", "subtitle": "...", "keywords": ["..."], "desc": "HTML formatted AIDA description"}`;
                 const res = await fetchGemini(prompt, true);
                 state.seoData = res;
                 document.getElementById('kdp-backend-page').classList.remove('hidden');
@@ -534,9 +560,12 @@
         function showToast(msg, error = false) {
             const t = document.getElementById('status-message');
             t.innerHTML = `<i class="fas ${error ? 'fa-exclamation-circle text-red-500' : 'fa-check-circle text-emerald-500'}"></i> <span class="text-xs font-bold">${msg}</span>`;
-            t.classList.add('show');
+            t.classList.add('show', 'flex');
             t.classList.remove('hidden');
-            setTimeout(() => t.classList.remove('show'), 3000);
+            setTimeout(() => {
+                t.classList.remove('show');
+                setTimeout(() => t.classList.add('hidden'), 300);
+            }, 3000);
         }
 
         function openApiModal(msg = "") {
@@ -613,7 +642,6 @@
             const backend = document.querySelectorAll('.kdp-backend-only');
             backend.forEach(el => el.style.display = 'none');
 
-            // Reset scale for export
             const originalTransform = area.style.transform;
             area.style.transform = 'none';
 
@@ -630,12 +658,12 @@
                 area.style.transform = originalTransform;
                 loader.classList.add('hidden');
                 showToast("PDF Salvato!");
+            }).catch(err => {
+                console.error("PDF Error:", err);
+                loader.classList.add('hidden');
+                showToast("Errore durante il salvataggio PDF", true);
             });
         };
-
-        // Correzione degli Event Listeners per evitare TypeError se gli elementi sono nulli
-        const btnExportPdf = document.getElementById('btn-export-pdf');
-        if (btnExportPdf) btnExportPdf.addEventListener('click', exportPdf);
 
         const mobileExportPdf = document.getElementById('mobile-export-pdf');
         if (mobileExportPdf) mobileExportPdf.addEventListener('click', exportPdf);
