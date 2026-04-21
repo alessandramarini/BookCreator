@@ -3,898 +3,607 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>KDP AI Studio - PRO Publisher Edition</title>
+    <title>KDP AI Studio - PRO Mobile Edition</title>
     
-    <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin>
+    <!-- Font e Icone -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+    <!-- Script Esterni -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
+        :root {
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
         body { 
             -webkit-tap-highlight-color: transparent; 
             touch-action: manipulation;
-            overscroll-behavior-y: none; 
+            overscroll-behavior-y: none;
+            background-color: #f1f5f9;
         }
+
+        /* Ottimizzazione Scrolling Mobile */
         .scrollable-panel { 
             -webkit-overflow-scrolling: touch; 
             scroll-behavior: smooth;
+            padding-bottom: 120px; /* Spazio per la nav mobile */
         }
 
-        .safe-pb { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
-        .safe-mb { margin-bottom: env(safe-area-inset-bottom); }
+        /* Scaling dinamico dell'anteprima su mobile */
+        @media (max-width: 768px) {
+            #book-export-area {
+                transform: scale(0.45);
+                transform-origin: top center;
+                margin-bottom: -500px; /* Compensa lo spazio vuoto dopo lo scale */
+            }
+            .preview-container {
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                overflow-x: hidden;
+            }
+        }
 
-        #book-preview { background-color: white; font-family: 'Georgia', serif; color: #333; line-height: 1.6; }
         .page-break { page-break-after: always; break-after: page; }
         
-        .book-content h1 { font-size: 2.5em; font-weight: bold; margin-bottom: 1em; text-align: center; }
-        .book-content h2 { font-size: 2em; font-weight: bold; margin-top: 1.5em; margin-bottom: 0.5em; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-        .book-content h3 { font-size: 1.5em; font-weight: bold; margin-top: 1.2em; margin-bottom: 0.5em; }
-        .book-content p { margin-bottom: 1em; text-align: justify; }
-        .book-content img { max-width: 100%; height: auto; display: block; margin: 1.5em auto; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .book-content ul { list-style-type: disc; padding-left: 2em; margin-bottom: 1em; }
-        .book-content li { margin-bottom: 0.5em; }
-        
-        #generated-cover-container {
-            width: 100%; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background-size: cover; background-position: center; position: relative; text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        /* Loader personalizzato */
+        .loader { 
+            border: 2px solid #f3f3f3; 
+            border-radius: 50%; 
+            border-top: 2px solid currentColor; 
+            width: 16px; 
+            height: 16px; 
+            animation: spin 1s linear infinite; 
+            display: inline-block; 
         }
-        #generated-cover-container .overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%); z-index: 1; }
-        #generated-cover-container > div { z-index: 2; }
-
-        .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid currentColor; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        .kdp-html-box { background-color: #0f172a; color: #a5b4fc; font-family: ui-monospace, monospace; padding: 1rem; border-radius: 0.5rem; white-space: pre-wrap; word-break: break-all; font-size: 0.875rem; border: 1px solid #334155; }
-        
-        .pdf-export-mode { padding: 0 !important; background-color: white !important; }
-        .pdf-export-mode .page-break { padding-top: 25mm !important; padding-bottom: 25mm !important; box-sizing: border-box; }
-        .pdf-export-mode h1, .pdf-export-mode h2, .pdf-export-mode h3, .pdf-export-mode p, .pdf-export-mode ul, .pdf-export-mode .prose, .pdf-export-mode #cover-placeholder, .pdf-export-mode #author-bio-content, .pdf-export-mode #lead-magnet-content, .pdf-export-mode #toc-content {
-            padding-left: 25mm !important; padding-right: 25mm !important; box-sizing: border-box; max-width: 100% !important; margin-left: 0 !important; margin-right: 0 !important;
-        }
-        .pdf-export-mode img {
-            width: 100% !important; max-width: 100% !important; margin: 15mm 0 !important; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; display: block;
-        }
-        .pdf-export-mode #marketing-page, .pdf-export-mode #cover-page { border: none !important; background: white !important; }
+        /* Stile Libro */
+        .book-content { font-family: 'Georgia', serif; }
+        .book-content h1 { font-size: 2.5rem; font-weight: 900; line-height: 1.2; text-align: center; }
+        .book-content h2 { font-size: 1.8rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #1e293b; }
+        .book-content p { font-size: 1.1rem; line-height: 1.7; text-align: justify; margin-bottom: 1.2rem; }
+
+        /* Toast animato */
+        #status-message.show { transform: translateY(0); opacity: 1; }
+        #status-message { transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
-<body class="bg-slate-100 h-screen overflow-hidden flex flex-col font-sans antialiased text-slate-800">
+<body class="h-screen overflow-hidden flex flex-col font-sans antialiased text-slate-800">
 
-    <div id="api-key-modal" class="fixed inset-0 bg-slate-900/95 z-[110] hidden items-center justify-center p-4 backdrop-blur-md transition-opacity">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md transform transition-all border border-slate-200">
-            <h2 class="text-2xl font-black text-slate-800 mb-3 flex items-center"><i class="fas fa-key text-amber-500 mr-3"></i> Setup Accesso AI</h2>
-            <p id="api-modal-msg" class="text-sm text-slate-600 mb-6 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
-                Per garantire privacy e zero costi di server, questa web-app necessita della tua chiave <b>Google Gemini API</b> (gratuita).<br><br>Viene crittografata e salvata <b>esclusivamente nel tuo dispositivo</b>.
-            </p>
-            <input type="password" id="input-api-key" class="w-full border-2 border-slate-300 rounded-xl p-3.5 mb-5 font-mono text-sm focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 outline-none transition-all placeholder-slate-400" placeholder="Incolla qui (inizia con AIzaSy...)">
-            <div class="flex justify-end gap-3 mt-2">
-                <button id="btn-close-api-modal" class="px-5 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors text-sm">Annulla</button>
-                <button id="btn-save-api-key" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg transition-transform active:scale-95 text-sm flex items-center"><i class="fas fa-lock mr-2"></i>Salva & Usa App</button>
+    <!-- API Key Modal -->
+    <div id="api-key-modal" class="fixed inset-0 bg-slate-900/90 z-[110] hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
+            <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mb-4">
+                <i class="fas fa-key text-amber-600 text-xl"></i>
             </div>
-            <p class="text-xs text-slate-400 mt-6 text-center font-medium">Ottienila in 30 secondi su <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-600 hover:text-indigo-800 underline">Google AI Studio &rarr;</a></p>
+            <h2 class="text-xl font-black text-slate-800 mb-2">Configura AI</h2>
+            <p id="api-modal-msg" class="text-xs text-slate-500 mb-6">Inserisci la tua chiave Gemini API per iniziare. Verrà salvata solo sul tuo dispositivo.</p>
+            <input type="password" id="input-api-key" class="w-full border-2 border-slate-100 bg-slate-50 rounded-2xl p-4 mb-6 font-mono text-sm focus:border-indigo-500 outline-none transition-all" placeholder="AIzaSy...">
+            <div class="flex flex-col gap-3">
+                <button id="btn-save-api-key" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black shadow-lg shadow-indigo-200 active:scale-95 transition-all">Salva Chiave</button>
+                <button id="btn-close-api-modal" class="w-full py-3 text-slate-400 font-bold text-sm">Annulla</button>
+            </div>
         </div>
     </div>
 
-    <div id="fullscreen-loader" class="fixed inset-0 bg-slate-900/95 z-[100] hidden flex-col items-center justify-center text-white backdrop-blur-md transition-opacity duration-300">
-        <div class="loader border-amber-500 border-t-transparent w-16 h-16 mb-6 border-4"></div>
-        <p class="text-2xl font-black mb-3 text-center px-4 tracking-tight" data-i18n="pdf_loading_title">Stampa PDF in corso...</p>
-        <p class="text-sm text-slate-400 text-center px-8 max-w-md font-medium leading-relaxed" data-i18n="pdf_loading_desc">Stiamo applicando la gabbia KDP e i margini professionali. Non chiudere o ricaricare la pagina.</p>
+    <!-- Fullscreen Loader -->
+    <div id="fullscreen-loader" class="fixed inset-0 bg-white/95 z-[100] hidden flex-col items-center justify-center backdrop-blur-md">
+        <div class="loader border-indigo-600 border-t-transparent w-12 h-12 mb-4 border-4"></div>
+        <p class="text-lg font-black text-slate-900" data-i18n="pdf_loading_title">Creazione Manoscritto...</p>
+        <p class="text-sm text-slate-400 mt-2" data-i18n="pdf_loading_desc">Ottimizzazione layout di stampa...</p>
     </div>
 
-    <div id="status-message" class="p-4 rounded-xl hidden z-[90] shadow-2xl fixed top-20 left-4 right-4 md:left-auto md:right-8 md:w-96 transition-all transform duration-300 flex items-center gap-3 border"></div>
+    <!-- Toast -->
+    <div id="status-message" class="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] md:w-80 p-4 rounded-2xl z-[120] shadow-2xl border flex items-center gap-3 bg-white"></div>
 
-    <header class="bg-slate-900 text-amber-500 p-3 md:p-4 shadow-lg flex justify-between items-center z-10 shrink-0 border-b border-slate-700/50 relative">
-        <div class="flex items-center gap-3 w-1/3">
-            <h1 class="text-lg md:text-xl font-black truncate tracking-wide flex items-center">
-                <i class="fas fa-bolt mr-2 text-amber-400"></i> 
-                <span class="hidden sm:inline text-white">KDP PRO <span class="text-amber-500">Studio</span></span>
-                <span class="sm:hidden text-white">KDP <span class="text-amber-500">PRO</span></span>
-            </h1>
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center z-10 shrink-0">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                <i class="fas fa-bolt text-white text-sm"></i>
+            </div>
+            <span class="font-black text-slate-900 tracking-tighter">KDP <span class="text-indigo-600">PRO</span></span>
         </div>
         
-        <div class="flex items-center justify-center w-1/3">
-             <button id="btn-reset-project" class="text-slate-400 hover:text-red-400 text-xs md:text-sm font-bold flex items-center gap-1.5 transition-colors px-3 py-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-800" title="Nuovo Progetto">
-                <i class="fas fa-trash-alt"></i> <span class="hidden md:inline" data-i18n="btn_reset">Nuovo</span>
-            </button>
-        </div>
-
-        <div class="flex items-center justify-end gap-2 sm:gap-3 w-1/3">
-            <select id="ui-lang-selector" class="bg-slate-800 text-slate-200 border border-slate-600 rounded-lg px-2 py-1.5 text-base md:text-sm font-semibold outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors cursor-pointer appearance-none">
+        <div class="flex items-center gap-2">
+            <select id="ui-lang-selector" class="bg-slate-50 border-none rounded-lg px-2 py-1 text-xs font-bold outline-none cursor-pointer">
                 <option value="it">🇮🇹 IT</option>
                 <option value="en">🇬🇧 EN</option>
                 <option value="es">🇪🇸 ES</option>
                 <option value="fr">🇫🇷 FR</option>
-                <option value="de">🇩🇪 DE</option>
-                <option value="pt">🇵🇹 PT</option>
             </select>
-            <button id="btn-open-settings" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 md:py-2 rounded-lg font-bold transition-colors flex items-center text-sm md:text-base border border-slate-600" title="Configura API Key">
-                <i class="fas fa-cog"></i>
-            </button>
-            <button id="btn-export-pdf" class="bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-900 px-3 md:px-5 py-1.5 md:py-2 rounded-lg font-black transition-all transform active:scale-95 flex items-center text-sm md:text-base shadow-[0_4px_14px_rgba(245,158,11,0.3)]">
-                <i class="fas fa-print md:mr-2"></i> <span class="hidden md:inline" data-i18n="btn_export">Esporta KDP</span>
-            </button>
+            <button id="btn-open-settings" class="w-8 h-8 flex items-center justify-center text-slate-400"><i class="fas fa-cog"></i></button>
         </div>
     </header>
 
-    <div class="flex flex-1 overflow-hidden flex-col md:flex-row relative">
+    <main class="flex flex-1 overflow-hidden relative">
         
-        <div id="panel-editor" class="w-full md:w-[380px] lg:w-[420px] bg-white shadow-[4px_0_24px_rgba(0,0,0,0.04)] overflow-y-auto scrollable-panel border-r border-slate-200 flex flex-col safe-pb z-10">
-            <div class="p-4 md:p-6 space-y-6">
+        <!-- Panel Editor (Tools) -->
+        <div id="panel-editor" class="w-full md:w-[400px] bg-white overflow-y-auto scrollable-panel flex flex-col z-10">
+            <div class="p-5 space-y-6">
                 
-                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200/60 shadow-sm">
-                    <h2 class="font-black text-slate-800 text-lg mb-4 flex items-center"><span class="bg-slate-900 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">1</span> <span data-i18n="s1_title">Setup Progetto</span></h2>
-                    
-                    <label class="block text-sm font-bold text-slate-700 mb-1.5" data-i18n="s1_topic">Argomento Principale</label>
-                    <input type="text" id="input-topic" class="w-full border border-slate-300 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 font-bold text-base transition-all" data-i18n-ph="s1_topic_ph" placeholder="es. Intelligenza Artificiale">
-
-                    <label class="block text-sm font-bold text-slate-700 mb-1.5" data-i18n="s1_market">Mercato KDP (Lingua Output)</label>
-                    <select id="select-language" class="w-full border border-slate-300 rounded-xl p-3 mb-4 bg-white text-slate-900 font-semibold text-base transition-all focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
-                        <option value="English">English (US/UK)</option>
-                        <option value="Italiano" selected>Italiano (IT)</option>
-                        <option value="Español">Español (ES/MX)</option>
-                        <option value="Deutsch">Deutsch (DE)</option>
-                        <option value="Français">Français (FR)</option>
-                        <option value="Português">Português (BR/PT)</option>
-                    </select>
-
-                    <div class="grid grid-cols-2 gap-4">
+                <!-- STEP 1: SETUP -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="w-6 h-6 bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center">01</span>
+                        <h2 class="font-black text-slate-800" data-i18n="s1_title">Progetto</h2>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-3xl space-y-4 border border-slate-100">
                         <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide" data-i18n="s1_trim">Gabbia Stampa</label>
-                            <select id="select-trim" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white text-sm font-medium focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
-                                <option value="6x9">6 x 9 in</option>
-                                <option value="5.5x8.5">5.5 x 8.5 in</option>
-                                <option value="8.5x11">8.5 x 11 in</option>
-                            </select>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2" data-i18n="s1_topic">Argomento</label>
+                            <input type="text" id="input-topic" class="w-full bg-white border-none rounded-2xl p-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="es. Yoga per principianti">
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide" data-i18n="s1_pages">Pagine</label>
-                            <input type="number" id="input-pages" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500" value="150">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2" data-i18n="s1_market">Lingua</label>
+                                <select id="select-language" class="w-full bg-white border-none rounded-xl p-3 text-xs font-bold shadow-sm">
+                                    <option value="Italiano" selected>Italiano</option>
+                                    <option value="English">English</option>
+                                    <option value="Español">Español</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2" data-i18n="s1_trim">Formato</label>
+                                <select id="select-trim" class="w-full bg-white border-none rounded-xl p-3 text-xs font-bold shadow-sm">
+                                    <option value="6x9">6 x 9 in</option>
+                                    <option value="5.5x8.5">5.5 x 8.5 in</option>
+                                    <option value="8.5x11">8.5 x 11 in</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-200 shadow-sm relative overflow-hidden group hover:bg-blue-50 transition-colors">
-                    <h2 class="font-black text-blue-900 text-lg mb-2 flex items-center"><span class="bg-blue-600 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">2</span> <span data-i18n="s2_title">Ricerca Amazon</span></h2>
-                    <p class="text-sm text-blue-800/80 mb-4 font-medium leading-snug" data-i18n="s2_desc">Estrae i problemi del target dal best seller attuale.</p>
-                    
-                    <button id="btn-research" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3.5 rounded-xl shadow-[0_4px_10px_rgba(37,99,235,0.2)] transition-all transform active:scale-95 flex justify-center items-center font-bold text-base">
-                        <i class="fas fa-radar mr-2"></i> <span data-i18n="btn_research">Analizza Nicchia & Gap</span>
-                        <div id="loader-research" class="hidden loader border-white border-t-transparent ml-2"></div>
-                    </button>
-                </div>
-
-                <div class="bg-purple-50/50 p-5 rounded-2xl border border-purple-200 shadow-sm hover:bg-purple-50 transition-colors">
-                    <h2 class="font-black text-purple-900 text-lg mb-4 flex items-center"><span class="bg-purple-600 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">3</span> <span data-i18n="s3_title">Branding Libro</span></h2>
-                    
-                    <div class="mb-5 space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-purple-800 mb-1.5 uppercase tracking-wide" data-i18n="s3_art">Stile Visivo (AI Prompt)</label>
-                            <input type="text" id="input-art-style" class="w-full border border-purple-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-500 font-medium" data-i18n-ph="s3_art_ph" placeholder="es. Acquerello, 3D render...">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-purple-800 mb-1.5 uppercase tracking-wide" data-i18n="s3_char">Personaggio Ricorrente</label>
-                            <textarea id="input-character" class="w-full border border-purple-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-purple-200 focus:border-purple-500 font-medium" rows="2" data-i18n-ph="s3_char_ph" placeholder="es. Cane dorato con collare rosso..."></textarea>
-                        </div>
+                <!-- STEP 2: RICERCA -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="w-6 h-6 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">02</span>
+                        <h2 class="font-black text-slate-800" data-i18n="s2_title">Analisi</h2>
                     </div>
-
-                    <button id="btn-marketing" class="w-full bg-purple-600 hover:bg-purple-700 text-white p-3.5 rounded-xl shadow-[0_4px_10px_rgba(147,51,234,0.2)] transition-all transform active:scale-95 flex justify-center items-center font-bold text-base">
-                        <i class="fas fa-user-tie mr-2"></i> <span data-i18n="btn_marketing">Genera Autore & Backend</span>
-                        <div id="loader-marketing" class="hidden loader border-white border-t-transparent ml-2"></div>
+                    <button id="btn-research" class="w-full bg-white border border-blue-100 p-5 rounded-3xl text-left hover:bg-blue-50 transition-all group relative overflow-hidden">
+                        <div class="flex justify-between items-center relative z-10">
+                            <div>
+                                <h3 class="font-black text-blue-900 text-sm" data-i18n="btn_research">Analizza Nicchia</h3>
+                                <p class="text-[10px] text-blue-400 mt-1" data-i18n="s2_desc">Trova problemi e soluzioni del target.</p>
+                            </div>
+                            <div id="loader-research" class="hidden loader text-blue-600"></div>
+                            <i class="fas fa-arrow-right text-blue-200 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
                     </button>
                 </div>
 
-                <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-200 shadow-sm transition-colors">
-                    <h2 class="font-black text-indigo-900 text-lg mb-2 flex items-center"><span class="bg-indigo-600 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">4</span> <span data-i18n="s4_title">Manoscritto</span></h2>
-                    <p class="text-sm text-indigo-800/80 mb-4 font-medium leading-snug" data-i18n="s4_desc">Crea l'indice e scrivi i capitoli ottimizzati per il target.</p>
-
-                    <button id="btn-toc" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-3.5 rounded-xl shadow-[0_4px_10px_rgba(79,70,229,0.2)] transition-all transform active:scale-95 flex justify-center items-center font-bold text-base">
-                        <i class="fas fa-list-ul mr-2"></i> <span data-i18n="btn_toc">Genera Struttura (TOC)</span>
-                        <div id="loader-toc" class="hidden loader border-white border-t-transparent ml-2"></div>
-                    </button>
-
-                    <div id="chapters-manager" class="mt-6 hidden pt-2">
-                        <h3 class="font-black text-indigo-900 text-sm mb-4 tracking-wide border-b border-indigo-200 pb-2" data-i18n="s4_chaps">Sviluppo Capitoli</h3>
-                        <div id="chapters-list" class="space-y-4">
+                <!-- STEP 3: MANOSCRITTO -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="w-6 h-6 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">03</span>
+                        <h2 class="font-black text-slate-800" data-i18n="s4_title">Manoscritto</h2>
+                    </div>
+                    <button id="btn-toc" class="w-full bg-indigo-600 p-5 rounded-3xl text-left shadow-lg shadow-indigo-100 active:scale-[0.98] transition-all">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-black text-white text-sm" data-i18n="btn_toc">Genera Indice</h3>
+                                <p class="text-[10px] text-indigo-200 mt-1">Crea la struttura in 5 capitoli.</p>
+                            </div>
+                            <div id="loader-toc" class="hidden loader text-white"></div>
                         </div>
+                    </button>
+                    <div id="chapters-manager" class="hidden space-y-3 pt-2">
+                        <div id="chapters-list" class="space-y-2"></div>
                     </div>
                 </div>
 
-                <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-200 shadow-sm hover:bg-emerald-50 transition-colors">
-                    <h2 class="font-black text-emerald-900 text-lg mb-4 flex items-center"><span class="bg-emerald-600 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">5</span> <span data-i18n="s5_title">Editing & Tone</span></h2>
-                    
-                    <label class="block text-xs font-bold text-emerald-800 mb-1.5 uppercase tracking-wide" data-i18n="s5_tone">Tono di Voce Globale</label>
-                    <select id="select-style" class="w-full border border-emerald-200 rounded-xl p-3 mb-5 font-semibold text-sm bg-white focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500">
-                        <option value="Pratico, Azionabile e Diretto (Step-by-step)">Pratico / How-To (Manuali)</option>
-                        <option value="Autorevole, Ricco di Dati e Professionale">Autorevole (Business/Finanza)</option>
-                        <option value="Empatico, Motivazionale e Incoraggiante">Empatico (Self-Help/Salute)</option>
-                        <option value="Semplice, Divulgativo per Principianti Assoluti">Semplice ("Per negati")</option>
-                        <option value="Creativo, Immersivo e Narrativo">Narrativo (Storie/Bambini)</option>
-                    </select>
-
-                    <button id="btn-format-all" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3.5 rounded-xl shadow-[0_4px_10px_rgba(5,150,105,0.2)] transition-all transform active:scale-95 flex justify-center items-center font-bold text-base">
-                        <i class="fas fa-magic mr-2"></i> <span data-i18n="btn_format">Masterizza Manoscritto</span>
-                        <div id="loader-format" class="hidden loader border-white border-t-transparent ml-2"></div>
-                    </button>
-                </div>
-
-                <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-5 rounded-2xl border border-amber-300 shadow-sm relative">
-                    <div class="absolute -top-3 right-4 bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm uppercase tracking-widest">Lancio</div>
-                    <h2 class="font-black text-amber-900 text-lg mb-5 flex items-center"><span class="bg-amber-500 text-slate-900 w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">6</span> <span data-i18n="s6_title">Materiali Marketing</span></h2>
-                    
-                    <div class="space-y-3.5">
-                        <button id="btn-cover" class="w-full bg-white hover:bg-amber-50 text-amber-900 border border-amber-300 p-3.5 rounded-xl shadow-sm transition-all transform active:scale-95 flex justify-between items-center font-bold text-sm">
-                            <span class="flex items-center"><i class="fas fa-image text-amber-500 mr-2.5 text-lg"></i> <span data-i18n="btn_cover">Genera Copertina AI</span></span>
-                            <div id="loader-cover" class="hidden loader border-amber-500 border-t-transparent w-4 h-4"></div>
+                <!-- STEP 4: MARKETING -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="w-6 h-6 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">04</span>
+                        <h2 class="font-black text-slate-800" data-i18n="s6_title">Marketing</h2>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="btn-cover" class="bg-white border border-amber-100 p-4 rounded-3xl text-center active:scale-95 transition-all">
+                            <i class="fas fa-image text-amber-500 mb-2 block text-lg"></i>
+                            <span class="text-[10px] font-black uppercase text-amber-900" data-i18n="btn_cover">Cover AI</span>
+                            <div id="loader-cover" class="hidden loader text-amber-500 block mx-auto mt-1"></div>
                         </button>
-
-                        <button id="btn-seo" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 p-3.5 rounded-xl shadow-md transition-all transform active:scale-95 flex justify-between items-center font-bold text-sm">
-                            <span class="flex items-center"><i class="fab fa-amazon mr-2.5 text-lg"></i> <span data-i18n="btn_seo">Listing SEO KDP</span></span>
-                            <div id="loader-seo" class="hidden loader border-slate-900 border-t-transparent w-4 h-4"></div>
-                        </button>
-
-                        <button id="btn-video-ad" class="w-full bg-slate-900 hover:bg-slate-800 text-white p-3.5 rounded-xl shadow-md transition-all transform active:scale-95 flex justify-between items-center font-bold text-sm">
-                            <span class="flex items-center"><i class="fas fa-video text-red-500 mr-2.5 text-lg"></i> <span data-i18n="btn_video">Script Amazon Ads</span></span>
-                            <div id="loader-video" class="hidden loader border-white border-t-transparent w-4 h-4"></div>
+                        <button id="btn-seo" class="bg-white border border-amber-100 p-4 rounded-3xl text-center active:scale-95 transition-all">
+                            <i class="fab fa-amazon text-amber-500 mb-2 block text-lg"></i>
+                            <span class="text-[10px] font-black uppercase text-amber-900" data-i18n="btn_seo">SEO KDP</span>
+                            <div id="loader-seo" class="hidden loader text-amber-500 block mx-auto mt-1"></div>
                         </button>
                     </div>
                 </div>
+
+                <!-- RESET -->
+                <button id="btn-reset-project" class="w-full py-4 text-xs font-bold text-slate-400 bg-slate-100 rounded-2xl" data-i18n="btn_reset">Nuovo Progetto</button>
 
             </div>
         </div>
 
-        <div id="panel-preview" class="w-full md:w-2/3 bg-slate-200 p-3 sm:p-6 md:p-10 overflow-y-auto scrollable-panel hidden md:flex justify-center relative pb-28 md:pb-10 shadow-inner">
-            <div id="book-export-area" class="bg-white w-full max-w-[850px] min-h-[1100px] shadow-[0_10px_40px_rgba(0,0,0,0.1)] p-6 sm:p-10 md:p-16 book-content relative">
+        <!-- Panel Preview -->
+        <div id="panel-preview" class="flex-1 bg-slate-100 p-4 md:p-10 overflow-y-auto scrollable-panel hidden md:flex justify-center preview-container">
+            <div id="book-export-area" class="bg-white w-[850px] min-h-[1100px] shadow-2xl p-16 book-content relative shrink-0">
                 
-                <div id="kdp-backend-page" class="kdp-backend-only hidden bg-amber-50/80 p-5 sm:p-8 rounded-2xl border-2 border-amber-300 border-dashed mb-14 shadow-sm relative break-words">
-                    <div class="absolute -top-4 right-6 bg-amber-500 text-slate-900 text-xs font-black px-4 py-1.5 rounded-full shadow-md uppercase tracking-widest" data-i18n="kdp_badge">Riservato Dashboard KDP</div>
-                    <h2 class="text-amber-900 font-black mb-8 text-2xl border-b border-amber-200 pb-3 flex items-center"><i class="fab fa-amazon mr-3 text-amber-500 text-3xl"></i> <span data-i18n="kdp_title">Metadati & Listing</span></h2>
-                    
-                    <div class="space-y-7">
-                        <div>
-                            <h3 class="text-xs font-black text-amber-700 uppercase tracking-widest mb-2" data-i18n="kdp_lbl_title">Titolo Principale (Gancio)</h3>
-                            <div id="seo-title" class="text-xl font-bold text-slate-800 bg-white p-4 border border-amber-200 rounded-xl shadow-sm break-words">...</div>
-                        </div>
-                        <div>
-                            <h3 class="text-xs font-black text-amber-700 uppercase tracking-widest mb-2" data-i18n="kdp_lbl_sub">Sottotitolo (Ottimizzato SEO)</h3>
-                            <div id="seo-subtitle" class="text-lg text-slate-700 bg-white p-4 border border-amber-200 rounded-xl shadow-sm break-words leading-relaxed">...</div>
-                        </div>
-                        <div>
-                            <h3 class="text-xs font-black text-amber-700 uppercase tracking-widest mb-2" data-i18n="kdp_lbl_kw">I 7 Slot Keyword (Backend)</h3>
-                            <div id="seo-keywords" class="flex flex-wrap gap-2 mt-2"></div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between items-end mb-2">
-                                <h3 class="text-xs font-black text-amber-700 uppercase tracking-widest" data-i18n="kdp_lbl_desc">Descrizione (HTML Format)</h3>
-                                <button onclick="copyKdpHtml()" class="text-amber-800 bg-amber-200 hover:bg-amber-300 px-4 py-2 rounded-lg font-bold shadow-sm transition-colors text-xs flex items-center active:scale-95"><i class="fas fa-copy mr-2"></i> <span data-i18n="kdp_btn_copy">Copia per KDP</span></button>
-                            </div>
-                            <div id="seo-desc" class="kdp-html-box text-sm max-h-64 overflow-y-auto border border-slate-700">...</div>
-                        </div>
-
-                        <div id="video-ad-section" class="hidden mt-10 border-t border-amber-300 border-dashed pt-8">
-                            <h3 class="text-xl font-black text-red-600 mb-5 flex items-center"><i class="fas fa-film mr-3 text-2xl"></i> Amazon Video Ads Script</h3>
-                            <div class="bg-slate-900 text-slate-300 p-5 rounded-2xl text-sm mb-6 border border-slate-700 shadow-inner">
-                                <h4 class="text-amber-400 font-bold mb-4 uppercase tracking-wider text-xs border-b border-slate-700 pb-2 flex items-center"><i class="fas fa-cog mr-2"></i> <span data-i18n="vid_specs">Direttive Videomaker</span></h4>
-                                <ul class="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 font-mono text-xs">
-                                    <li class="flex items-center"><i class="fas fa-check-circle text-emerald-500 mr-2"></i> Ratio: <b class="text-white ml-1">16:9</b> (Min 1080p)</li>
-                                    <li class="flex items-center"><i class="fas fa-check-circle text-emerald-500 mr-2"></i> Format: <b class="text-white ml-1">MP4 / H.264</b></li>
-                                    <li class="flex items-center"><i class="fas fa-check-circle text-emerald-500 mr-2"></i> Durata: <b class="text-white ml-1">15 - 30 sec</b></li>
-                                    <li class="flex items-center"><i class="fas fa-check-circle text-emerald-500 mr-2"></i> Audio: <b id="ui-spec-lang" class="text-white ml-1 uppercase">Local</b></li>
-                                </ul>
-                            </div>
-                            <div id="video-script-content" class="bg-white p-6 sm:p-8 border border-slate-200 rounded-2xl text-slate-800 shadow-sm prose prose-slate max-w-none prose-p:leading-relaxed prose-strong:text-red-600"></div>
-                        </div>
+                <!-- SEO DASHBOARD -->
+                <div id="kdp-backend-page" class="kdp-backend-only hidden bg-slate-50 p-8 rounded-3xl border border-slate-200 mb-10">
+                    <h2 class="text-slate-900 font-black mb-6 flex items-center"><i class="fab fa-amazon mr-2 text-indigo-600"></i> <span data-i18n="kdp_title">Dashboard KDP</span></h2>
+                    <div class="space-y-6 text-sm">
+                        <div><label class="font-black text-[10px] uppercase text-slate-400 block mb-2" data-i18n="kdp_lbl_title">Titolo</label><div id="seo-title" class="bg-white p-4 rounded-2xl border border-slate-100 font-bold">...</div></div>
+                        <div><label class="font-black text-[10px] uppercase text-slate-400 block mb-2" data-i18n="kdp_lbl_sub">Sottotitolo</label><div id="seo-subtitle" class="bg-white p-4 rounded-2xl border border-slate-100">...</div></div>
+                        <div><label class="font-black text-[10px] uppercase text-slate-400 block mb-2" data-i18n="kdp_lbl_kw">Keyword</label><div id="seo-keywords" class="flex flex-wrap gap-2"></div></div>
+                        <div><label class="font-black text-[10px] uppercase text-slate-400 block mb-2" data-i18n="kdp_lbl_desc">Descrizione HTML</label><div id="seo-desc" class="bg-slate-900 text-indigo-300 p-4 rounded-2xl font-mono text-xs whitespace-pre-wrap overflow-y-auto max-h-40">...</div></div>
                     </div>
                 </div>
 
-                <div id="cover-page" class="page-break flex flex-col items-center justify-center min-h-[600px] md:min-h-[850px] border-[12px] border-slate-50 p-6 relative bg-white overflow-hidden shadow-inner">
-                    <div id="cover-placeholder" class="text-center w-full px-4 relative z-10 flex flex-col items-center">
-                        <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                            <i class="fas fa-book-open text-4xl text-slate-300"></i>
-                        </div>
-                        <h1 id="preview-title" class="text-4xl sm:text-5xl text-slate-800 font-black break-words leading-tight" data-i18n="prev_cov_title">Il Tuo Titolo Qui</h1>
-                        <p id="preview-author" class="text-lg sm:text-xl mt-6 text-indigo-600 font-bold uppercase tracking-[0.2em] break-words" data-i18n="prev_cov_auth">Nome Autore</p>
-                        <p class="mt-8 text-sm text-slate-400 max-w-sm mx-auto bg-slate-50 p-3 rounded-lg border border-slate-100" data-i18n="prev_cov_desc">Procedi con gli step 2 e 3, poi usa "Mockup Copertina AI" nello step 6 per generarne una reale.</p>
+                <!-- COVER PAGE -->
+                <div id="cover-page" class="page-break flex flex-col items-center justify-center min-h-[900px] relative overflow-hidden bg-slate-50 rounded-lg border border-slate-100">
+                    <div id="cover-placeholder" class="text-center z-10 p-10">
+                        <i class="fas fa-book-open text-8xl text-slate-200 mb-8"></i>
+                        <h1 id="preview-title" class="text-5xl font-black text-slate-900" data-i18n="prev_cov_title">Il Tuo Libro</h1>
+                        <p id="preview-author" class="text-2xl mt-6 text-indigo-600 font-bold uppercase tracking-widest" data-i18n="prev_cov_auth">Nome Autore</p>
                     </div>
                 </div>
 
-                <div id="research-page" class="kdp-backend-only page-break hidden">
-                    <h2 class="text-blue-600 text-sm font-black uppercase tracking-widest mb-6 border-b-2 border-blue-100 pb-3 flex items-center"><i class="fas fa-search-dollar mr-2 text-xl"></i> <span data-i18n="res_title">Ricerca di Mercato (Non Stampata)</span></h2>
-                    <div id="research-content" class="bg-blue-50/50 p-6 sm:p-8 rounded-2xl border border-blue-100 prose prose-blue prose-sm sm:prose-base max-w-none"></div>
+                <!-- TOC PAGE -->
+                <div id="toc-page" class="page-break hidden pt-20">
+                    <h1 class="text-4xl font-black text-slate-900 mb-12" data-i18n="toc_title">Indice</h1>
+                    <div id="toc-content" class="text-xl space-y-4"></div>
                 </div>
 
-                <div id="marketing-page" class="page-break hidden bg-gradient-to-br from-indigo-50 to-white border-l-8 border-indigo-500 p-8 sm:p-12 my-8 rounded-r-2xl shadow-sm break-words">
-                    <h2 class="text-indigo-800 mb-8 text-2xl sm:text-3xl font-black flex items-center"><i class="fas fa-gift mr-4 text-indigo-500 text-4xl"></i> <span data-i18n="lead_title">Un Regalo Esclusivo Per Te</span></h2>
-                    <div id="lead-magnet-content" class="prose prose-indigo prose-lg max-w-none prose-a:text-indigo-600 prose-a:font-bold"></div>
-                </div>
-
-                <div id="toc-page" class="page-break hidden break-words pt-10">
-                    <h1 class="text-4xl sm:text-5xl font-black text-slate-800 border-b-4 border-slate-800 pb-4 mb-10 inline-block" data-i18n="toc_title">Indice dei Contenuti</h1>
-                    <div id="toc-content" class="text-lg sm:text-xl font-medium text-slate-700 leading-loose"></div>
-                </div>
-
-                <div id="manuscript-content" class="break-words">
-                    <div class="flex flex-col items-center justify-center text-center py-20 sm:py-32 px-6 border-2 border-dashed border-slate-300 rounded-3xl m-4 bg-slate-50/50" id="empty-manuscript-msg">
-                        <div class="w-16 h-16 bg-slate-200 text-slate-400 rounded-full flex items-center justify-center mb-4">
-                            <i class="fas fa-pencil-alt text-2xl"></i>
-                        </div>
-                        <p class="text-lg font-bold text-slate-600" data-i18n="empty_p1">Il manoscritto è ancora vuoto.</p>
-                        <p class="text-sm text-slate-500 mt-2 max-w-xs" data-i18n="empty_p2">Completa gli step nella barra di sinistra per generare i contenuti.</p>
+                <!-- MANUSCRIPT -->
+                <div id="manuscript-content" class="mt-20">
+                    <div id="empty-manuscript-msg" class="text-center py-40 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                        <i class="fas fa-pencil-alt text-4xl text-slate-200 mb-4"></i>
+                        <p class="font-black text-slate-400" data-i18n="empty_p1">Manoscritto vuoto.</p>
                     </div>
                 </div>
-                
-                <div id="author-bio-page" class="page-break hidden mt-20 pt-16 border-t-8 border-slate-100 break-words text-center">
-                    <div class="w-24 h-24 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-md">
-                        <i class="fas fa-user-circle text-4xl text-slate-300"></i>
-                    </div>
-                    <h2 class="text-3xl sm:text-4xl font-black mb-8"><span data-i18n="bio_title">L'Autore:</span> <span id="bio-pen-name" class="text-indigo-600 border-b-4 border-indigo-200 pb-1"></span></h2>
-                    <div id="author-bio-content" class="prose prose-lg mx-auto text-slate-600 text-justify"></div>
-                </div>
-
             </div>
         </div>
+    </main>
 
-    </div>
-
-    <div class="md:hidden bg-slate-900 border-t border-slate-800 flex shrink-0 z-50 fixed bottom-0 w-full shadow-[0_-10px_20px_rgba(0,0,0,0.3)] safe-pb">
-        <button id="tab-editor" class="flex-1 py-4 text-center text-amber-400 font-black border-t-4 border-amber-400 transition-colors bg-slate-800/50">
-            <i class="fas fa-sliders-h block mb-1 text-xl"></i> <span class="text-[11px] uppercase tracking-widest" data-i18n="tab_tools">Strumenti Pro</span>
+    <!-- Mobile Navigation Bar -->
+    <div class="md:hidden bg-white border-t border-slate-200 grid grid-cols-3 shrink-0 fixed bottom-0 w-full z-50 safe-area-bottom px-2 pt-2 pb-6">
+        <button id="tab-editor" class="flex flex-col items-center justify-center py-2 text-indigo-600 transition-all">
+            <i class="fas fa-magic text-xl mb-1"></i>
+            <span class="text-[9px] font-black uppercase tracking-tighter" data-i18n="tab_tools">Strumenti</span>
         </button>
-        <button id="tab-preview" class="flex-1 py-4 text-center text-slate-400 font-medium border-t-4 border-transparent transition-colors hover:text-white">
-            <i class="fas fa-book-open block mb-1 text-xl"></i> <span class="text-[11px] uppercase tracking-widest" data-i18n="tab_preview">Anteprima Libro</span>
+        <button id="tab-preview" class="flex flex-col items-center justify-center py-2 text-slate-400 transition-all">
+            <i class="fas fa-book-open text-xl mb-1"></i>
+            <span class="text-[9px] font-black uppercase tracking-tighter" data-i18n="tab_preview">Anteprima</span>
+        </button>
+        <button id="mobile-export-pdf" class="flex flex-col items-center justify-center py-2 text-slate-400 transition-all">
+            <i class="fas fa-file-pdf text-xl mb-1"></i>
+            <span class="text-[9px] font-black uppercase tracking-tighter" data-i18n="btn_export">Salva</span>
         </button>
     </div>
 
     <script>
-        const CONST_API_KEY = ""; 
-
-        const apiModal = document.getElementById('api-key-modal');
-        const inputApiKey = document.getElementById('input-api-key');
-        const btnSaveApiKey = document.getElementById('btn-save-api-key');
-        const btnCloseApiModal = document.getElementById('btn-close-api-modal');
-        const btnOpenSettings = document.getElementById('btn-open-settings');
-
-        function getActiveApiKey() {
-            const localKey = localStorage.getItem('kdp_gemini_key');
-            return localKey || CONST_API_KEY;
-        }
-
-        function requireApiKey(customMsg = null) {
-            const key = getActiveApiKey();
-            if (!key) {
-                if(customMsg) document.getElementById('api-modal-msg').innerHTML = `<b class="text-red-600">${customMsg}</b><br><br>Per favore, inserisci una chiave API Google valida.`;
-                else document.getElementById('api-modal-msg').innerHTML = `Per garantire privacy e zero costi, necessiti di una chiave <b>Google Gemini API</b> (gratuita).<br><br>Salvata localmente nel browser.`;
-                apiModal.classList.remove('hidden'); apiModal.classList.add('flex');
-                throw new Error("API Key mancante");
-            }
-            return key;
-        }
-
-        btnOpenSettings.addEventListener('click', () => {
-            inputApiKey.value = localStorage.getItem('kdp_gemini_key') || '';
-            document.getElementById('api-modal-msg').innerHTML = `Modifica la tua chiave <b>Google Gemini API</b>.`;
-            apiModal.classList.remove('hidden'); apiModal.classList.add('flex');
-        });
-
-        btnCloseApiModal.addEventListener('click', () => { apiModal.classList.remove('flex'); apiModal.classList.add('hidden'); });
-
-        btnSaveApiKey.addEventListener('click', () => {
-            const val = inputApiKey.value.trim();
-            if (val) { localStorage.setItem('kdp_gemini_key', val); showMessage(t('js_msg_key_saved')); } 
-            else { localStorage.removeItem('kdp_gemini_key'); }
-            apiModal.classList.remove('flex'); apiModal.classList.add('hidden');
-        });
-
-        const defaultState = { topic: "", language: "Italiano", trim: "6x9", pages: 150, penName: "", research: "", chapters: [], artStyle: "", character: "", targetVisuals: "", coverUrl: "", bioHtml: "", leadHtml: "", seoData: null, videoHtml: "" };
-        let state = { ...defaultState };
-
-        function saveProject() {
-            state.topic = document.getElementById('input-topic').value;
-            state.language = document.getElementById('select-language').value;
-            state.trim = document.getElementById('select-trim').value;
-            state.pages = document.getElementById('input-pages').value;
-            state.artStyle = document.getElementById('input-art-style').value;
-            state.character = document.getElementById('input-character').value;
-            
-            localStorage.setItem('kdp_project_state', JSON.stringify(state));
-        }
-
-        function loadProject() {
-            const saved = localStorage.getItem('kdp_project_state');
-            if (saved) {
-                try {
-                    state = { ...defaultState, ...JSON.parse(saved) };
-                    document.getElementById('input-topic').value = state.topic;
-                    document.getElementById('select-language').value = state.language;
-                    document.getElementById('select-trim').value = state.trim;
-                    document.getElementById('input-pages').value = state.pages;
-                    document.getElementById('input-art-style').value = state.artStyle || '';
-                    document.getElementById('input-character').value = state.character || '';
-                    
-                    updatePreviewTitle();
-
-                    if(state.research) {
-                        try {
-                            const nicheData = JSON.parse(state.research);
-                            document.getElementById('research-page').classList.remove('hidden');
-                            document.getElementById('research-content').innerHTML = `<i>Analisi ricaricata dal salvataggio locale. Procedi con gli altri step.</i>`;
-                        }catch(e){}
-                    }
-                    if(state.chapters.length > 0) {
-                        document.getElementById('empty-manuscript-msg').classList.add('hidden');
-                        renderChaptersManager(); renderTOCPreview(); renderManuscript();
-                    }
-                    if(state.penName) {
-                        document.getElementById('preview-author').textContent = state.penName; document.getElementById('bio-pen-name').textContent = state.penName;
-                    }
-                    if(state.bioHtml) {
-                        document.getElementById('author-bio-page').classList.remove('hidden'); document.getElementById('author-bio-content').innerHTML = state.bioHtml;
-                    }
-                    if(state.leadHtml) {
-                        document.getElementById('marketing-page').classList.remove('hidden'); document.getElementById('lead-magnet-content').innerHTML = state.leadHtml;
-                    }
-                    if(state.coverUrl) {
-                        const title = state.seoData ? state.seoData.title : state.topic;
-                        const sub = state.seoData ? state.seoData.subtitle : '';
-                        document.getElementById('cover-page').innerHTML = `<div id="generated-cover-container" style="background-image: url('${state.coverUrl}');"><div class="overlay"></div><div class="p-6 sm:p-10 border-t-8 border-amber-500 bg-slate-900/80 backdrop-blur-sm mx-4 w-11/12 md:w-3/4 absolute bottom-6 sm:bottom-12 rounded-xl shadow-2xl text-left border border-white/10"><h1 class="text-3xl sm:text-5xl font-black mb-3 text-white leading-tight">${title}</h1><p class="text-base sm:text-lg text-amber-400 font-bold mb-4">${sub}</p><p class="text-xs text-white/80 border-t border-white/20 pt-2 font-black uppercase tracking-widest">${state.penName}</p></div></div>`;
-                    }
-                    if(state.seoData) {
-                        document.getElementById('kdp-backend-page').classList.remove('hidden');
-                        document.getElementById('seo-title').textContent = state.seoData.title; document.getElementById('preview-title').textContent = state.seoData.title;
-                        document.getElementById('seo-subtitle').textContent = state.seoData.subtitle;
-                        document.getElementById('seo-desc').textContent = state.seoData.html_description;
-                        const kwC = document.getElementById('seo-keywords'); kwC.innerHTML = '';
-                        state.seoData.keywords.forEach(kw => { const s = document.createElement('span'); s.className = 'bg-amber-100 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm'; s.textContent = kw; kwC.appendChild(s); });
-                    }
-                    if(state.videoHtml) {
-                        document.getElementById('video-ad-section').classList.remove('hidden');
-                        document.getElementById('video-script-content').innerHTML = state.videoHtml;
-                    }
-                    
-                } catch(e) { console.error("Errore parsing stato locale:", e); }
-            }
-        }
-
-        document.getElementById('btn-reset-project').addEventListener('click', () => {
-            if(confirm("Attenzione: Vuoi cancellare tutto il libro e ricominciare da zero? Questa azione non può essere annullata.")) {
-                localStorage.removeItem('kdp_project_state');
-                location.reload(); 
-            }
-        });
-
-        document.querySelectorAll('input, select, textarea').forEach(el => el.addEventListener('change', saveProject));
-
+        // --- DIZIONARIO i18n ---
         const i18n = {
-            it: { btn_export: "Esporta (PDF)", btn_reset: "Nuovo", pdf_loading_title: "Impaginazione in corso...", pdf_loading_desc: "L'applicazione dei margini di stampa richiede calcolo intensivo. Attendi...",
-                s1_title: "Setup Progetto", s1_topic: "Argomento Principale", s1_topic_ph: "es. Day Trading Options", s1_market: "Mercato KDP (Lingua Output)", s1_trim: "Gabbia Stampa", s1_pages: "Target Pagine",
-                s2_title: "Ricerca Amazon", s2_desc: "Estrae i problemi del target dal best seller attuale.", btn_research: "Analizza Nicchia & Gap",
-                s3_title: "Branding Libro", s3_art: "Stile Visivo (AI Prompt)", s3_art_ph: "es. Acquerello, 3D render...", s3_char: "Personaggio Ricorrente", s3_char_ph: "es. Cane dorato con collare rosso...", btn_marketing: "Genera Autore & Backend",
-                s4_title: "Manoscritto", s4_desc: "Crea l'indice e scrivi i capitoli ottimizzati.", btn_toc: "Genera Struttura (TOC)", s4_chaps: "Sviluppo Capitoli",
-                s5_title: "Editing & Tone", s5_tone: "Tono di Voce Globale", btn_format: "Masterizza Manoscritto",
-                s6_title: "Materiali Marketing", btn_cover: "Genera Copertina AI", btn_seo: "Listing SEO KDP", btn_video: "Script Amazon Ads",
-                kdp_badge: "Riservato Dashboard KDP", kdp_title: "Metadati & Listing", kdp_lbl_title: "Titolo Principale (Gancio)", kdp_lbl_sub: "Sottotitolo (Ottimizzato SEO)", kdp_lbl_kw: "I 7 Slot Keyword (Backend)", kdp_lbl_desc: "Descrizione (HTML Format)", kdp_btn_copy: "Copia per KDP", vid_specs: "Direttive Videomaker",
-                prev_cov_title: "Il Tuo Titolo Qui", prev_cov_auth: "Nome Autore", prev_cov_desc: "Procedi con gli step 2 e 3, poi usa 'Mockup Copertina AI' nello step 6 per generarne una reale.",
-                res_title: "Ricerca di Mercato (Non Stampata)", lead_title: "Un Regalo Esclusivo Per Te", toc_title: "Indice dei Contenuti",
-                empty_p1: "Il manoscritto è ancora vuoto.", empty_p2: "Completa gli step nella barra di sinistra per generare i contenuti.", bio_title: "L'Autore:",
-                tab_tools: "Strumenti Pro", tab_preview: "Anteprima Libro",
-                js_msg_copy: "Codice HTML copiato negli appunti!", js_msg_err: "Errore durante l'operazione.", js_sub_btn: "Genera", js_txt_btn: "Scrivi Testo", js_img_btn: "Immagine",
-                js_msg_req_key: "Inserisci la tua API Key (Rotellina in alto) per continuare.", js_msg_key_saved: "Chiave API Salvata!"
+            it: {
+                btn_export: "Salva PDF", btn_reset: "Reset Progetto", pdf_loading_title: "Ottimizzazione...", pdf_loading_desc: "Creazione layout professionale...",
+                s1_title: "Progetto", s1_topic: "Argomento", s1_topic_ph: "es. Dieta Keto", s1_market: "Lingua", s1_trim: "Formato", s1_pages: "Pagine",
+                s2_title: "Analisi", s2_desc: "Trova gap e target.", btn_research: "Analizza Nicchia",
+                btn_marketing: "Crea Autore", s4_title: "Manoscritto", btn_toc: "Genera Indice",
+                s6_title: "Lancio", btn_cover: "Copertina AI", btn_seo: "SEO KDP",
+                kdp_title: "Dati KDP", kdp_lbl_title: "Titolo", kdp_lbl_sub: "Sottotitolo", kdp_lbl_kw: "Keyword", kdp_lbl_desc: "Descrizione HTML",
+                prev_cov_title: "Il Tuo Libro", prev_cov_auth: "Autore", toc_title: "Indice",
+                empty_p1: "Inizia a scrivere...", tab_tools: "Strumenti", tab_preview: "Anteprima",
+                js_msg_copy: "Copiato!", js_msg_err: "Errore!", js_txt_btn: "Scrivi", js_img_btn: "Immagine"
             },
-            en: { btn_export: "Export (PDF)", btn_reset: "Reset", pdf_loading_title: "Formatting Print PDF...", pdf_loading_desc: "Applying print margins takes processing power. Please wait...",
-                s1_title: "Project Setup", s1_topic: "Main Topic", s1_topic_ph: "e.g. Day Trading Options", s1_market: "KDP Market (Output Lang)", s1_trim: "Trim Size", s1_pages: "Target Pages",
-                s2_title: "Amazon Research", s2_desc: "Extract target problems from current best seller.", btn_research: "Analyze Niche & Gap",
-                s3_title: "Book Branding", s3_art: "Visual Style (Prompt)", s3_art_ph: "e.g. Watercolor, 3D render...", s3_char: "Recurring Character", s3_char_ph: "e.g. Golden dog with red collar...", btn_marketing: "Generate Author & Backend",
-                s4_title: "Manuscript", s4_desc: "Create index and write optimized chapters.", btn_toc: "Generate Structure (TOC)", s4_chaps: "Chapters Development",
-                s5_title: "Editing & Tone", s5_tone: "Global Tone of Voice", btn_format: "Master Manuscript",
-                s6_title: "Marketing Assets", btn_cover: "Generate AI Cover", btn_seo: "KDP SEO Listing", btn_video: "Amazon Ads Script",
-                kdp_badge: "For Amazon Dashboard", kdp_title: "Metadata & Listing", kdp_lbl_title: "Main Title (Hook)", kdp_lbl_sub: "Subtitle (SEO Optimized)", kdp_lbl_kw: "The 7 Backend Keywords", kdp_lbl_desc: "Description (HTML Format)", kdp_btn_copy: "Copy for KDP", vid_specs: "Videomaker Directives",
-                prev_cov_title: "Your Title Here", prev_cov_auth: "Author Name", prev_cov_desc: "Proceed with steps 2 and 3, then use 'AI Cover Mockup' in step 6.",
-                res_title: "Market Research (Not Printed)", lead_title: "An Exclusive Gift For You", toc_title: "Table of Contents",
-                empty_p1: "The manuscript is still empty.", empty_p2: "Complete the steps in the left bar to generate contents.", bio_title: "About the Author:",
-                tab_tools: "Pro Tools", tab_preview: "Book Preview",
-                js_msg_copy: "HTML Code copied to clipboard!", js_msg_err: "Error during operation.", js_sub_btn: "Generate", js_txt_btn: "Write Text", js_img_btn: "Image",
-                js_msg_req_key: "Please insert your API Key (Gear icon) to continue.", js_msg_key_saved: "API Key Saved!"
+            en: {
+                btn_export: "Save PDF", btn_reset: "Reset Project", pdf_loading_title: "Optimizing...", pdf_loading_desc: "Creating professional layout...",
+                s1_title: "Project", s1_topic: "Topic", s1_topic_ph: "e.g. Keto Diet", s1_market: "Language", s1_trim: "Trim", s1_pages: "Pages",
+                s2_title: "Analysis", s2_desc: "Find gap and target.", btn_research: "Analyze Niche",
+                btn_marketing: "Create Author", s4_title: "Manuscript", btn_toc: "Generate TOC",
+                s6_title: "Launch", btn_cover: "AI Cover", btn_seo: "KDP SEO",
+                kdp_title: "KDP Data", kdp_lbl_title: "Title", kdp_lbl_sub: "Subtitle", kdp_lbl_kw: "Keywords", kdp_lbl_desc: "HTML Description",
+                prev_cov_title: "Your Book", prev_cov_auth: "Author", toc_title: "Contents",
+                empty_p1: "Start writing...", tab_tools: "Tools", tab_preview: "Preview",
+                js_msg_copy: "Copied!", js_msg_err: "Error!", js_txt_btn: "Write", js_img_btn: "Image"
             }
         };
-        let currentUiLang = 'it';
-        function t(key) { return (i18n[currentUiLang] && i18n[currentUiLang][key]) || i18n['it'][key] || key; }
-        function updateUILanguage(lang) {
-            if(i18n[lang]) currentUiLang = lang; else currentUiLang = 'it';
-            document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n')); });
-            document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
-            if(state.chapters.length>0) renderChaptersManager(); 
-        }
-        document.getElementById('ui-lang-selector').addEventListener('change', (e) => updateUILanguage(e.target.value));
 
-        function showMessage(msg, isError = false) {
-            const el = document.getElementById('status-message');
-            el.innerHTML = isError ? `<i class="fas fa-exclamation-triangle text-2xl text-red-500"></i> <span class="font-medium">${msg}</span>` : `<i class="fas fa-check-circle text-2xl text-emerald-500"></i> <span class="font-medium">${msg}</span>`;
-            el.className = `p-4 rounded-xl z-[120] shadow-2xl fixed top-20 left-4 right-4 md:left-auto md:right-8 md:w-96 transition-all transform duration-300 flex items-center gap-3 border ${isError ? 'bg-white border-red-200 text-slate-800' : 'bg-slate-900 border-slate-700 text-white'}`;
-            el.classList.remove('hidden', '-translate-y-4', 'opacity-0');
-            setTimeout(() => el.classList.add('hidden', '-translate-y-4', 'opacity-0'), 5000);
-        }
-
-        function updatePreviewTitle() {
-            const topicInput = document.getElementById('input-topic').value;
-            if(topicInput) { document.getElementById('preview-title').textContent = topicInput; saveProject(); }
-        }
-
-        window.copyKdpHtml = function() {
-            const testDiv = document.getElementById('seo-desc');
-            const textToCopy = testDiv.innerText || testDiv.textContent;
-            const textArea = document.createElement("textarea"); textArea.value = textToCopy;
-            textArea.style.position = "fixed"; textArea.style.opacity = "0";
-            document.body.appendChild(textArea); textArea.focus(); textArea.select();
-            try { document.execCommand('copy'); showMessage(t('js_msg_copy')); } 
-            catch (err) { showMessage(t('js_msg_err'), true); }
-            document.body.removeChild(textArea);
+        let state = {
+            topic: "", language: "Italiano", trim: "6x9", pages: 100, penName: "", 
+            research: "", chapters: [], artStyle: "", character: "", 
+            coverUrl: "", seoData: null, uiLang: "it"
         };
 
-        async function apiFetchWrapper(url, payload, retryCount = 0) {
+        // --- CORE FUNCTIONS ---
+        function updateUILanguage(lang) {
+            state.uiLang = i18n[lang] ? lang : 'it';
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.innerText = i18n[state.uiLang][key] || i18n['en'][key] || key;
+            });
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                const key = el.getAttribute('data-i18n-ph');
+                el.placeholder = i18n[state.uiLang][key] || i18n['en'][key] || key;
+            });
+            if (state.chapters.length > 0) renderChaptersManager();
+        }
+
+        async function apiFetch(url, payload, retry = 0) {
             try {
                 const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) {
-                    if(response.status === 400 || response.status === 403) throw new Error("AUTH_FAIL");
-                    throw new Error(`Server Error: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? "AUTH" : `API Error: ${response.status}`);
                 return await response.json();
-            } catch (error) {
-                if (error.message === "AUTH_FAIL") {
-                    localStorage.removeItem('kdp_gemini_key'); 
-                    requireApiKey("La chiave API è errata o il limite (Quota) è stato superato. Verifica su Google AI Studio.");
-                }
-                if (retryCount < 3 && error.message !== "AUTH_FAIL") { 
-                    await new Promise(r => setTimeout(r, Math.pow(2, retryCount) * 1000));
-                    return apiFetchWrapper(url, payload, retryCount + 1);
-                }
-                throw error;
+            } catch (e) {
+                if (e.message === "AUTH") { localStorage.removeItem('kdp_gemini_key'); openApiModal("Chiave API non valida."); throw e; }
+                if (retry < 3) { await new Promise(r => setTimeout(r, 2000 * (retry + 1))); return apiFetch(url, payload, retry + 1); }
+                throw e;
             }
         }
 
-        async function fetchGeminiData(prompt) {
-            const key = requireApiKey();
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
-            const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: "Sei un Elite KDP Publisher. Rispondi sempre nella lingua richiesta dall'utente. Usa il markdown." }] } };
-            const data = await apiFetchWrapper(url, payload);
-            if (!data.candidates || !data.candidates[0].content) throw new Error("Risposta vuota dall'AI");
-            return data.candidates[0].content.parts[0].text;
-        }
+        function getActiveKey() { return localStorage.getItem('kdp_gemini_key') || ""; }
 
-        async function fetchGeminiJSON(prompt) {
-            const key = requireApiKey();
+        async function fetchGemini(prompt, isJson = false) {
+            const key = getActiveKey();
+            if (!key) { openApiModal(); throw new Error("Key missing"); }
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
-            const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: "Rispondi SOLO con JSON valido. Nessun blocco markdown." }] }, generationConfig: { responseMimeType: "application/json" } };
-            const data = await apiFetchWrapper(url, payload);
-            let text = data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/g, '').trim();
-            return JSON.parse(text);
-        }
-
-        async function fetchGeminiResearchJSON(prompt) {
-            const key = requireApiKey();
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
-            const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: "Usa web search per trovare dati reali Amazon. Solo JSON." }] }, generationConfig: { responseMimeType: "application/json" }, tools: [{ "google_search": {} }] };
-            const data = await apiFetchWrapper(url, payload);
-            let text = data.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/g, '').trim();
-            return JSON.parse(text);
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: isJson ? "Rispondi SOLO con JSON valido. Niente markdown, niente commenti." : "Sei un autore KDP esperto." }] }
+            };
+            if (isJson) payload.generationConfig = { responseMimeType: "application/json" };
+            const data = await apiFetch(url, payload);
+            let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            return isJson ? JSON.parse(text) : text;
         }
 
         async function fetchImagen(prompt) {
-            const key = requireApiKey();
+            const key = getActiveKey();
             const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${key}`;
-            const payload = { instances: { prompt: prompt }, parameters: { sampleCount: 1, aspectRatio: "3:4" } };
-            const data = await apiFetchWrapper(url, payload);
-            if (!data.predictions || data.predictions.length === 0) throw new Error("Immagine non generata");
+            const payload = { instances: [{ prompt }], parameters: { sampleCount: 1, aspectRatio: "3:4" } };
+            const data = await apiFetch(url, payload);
+            if (!data.predictions?.[0]?.bytesBase64Encoded) throw new Error("Image error");
             return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
         }
 
+        // --- ACTIONS ---
         document.getElementById('btn-research').addEventListener('click', async () => {
-            state.topic = document.getElementById('input-topic').value; state.language = document.getElementById('select-language').value;
-            if(!state.topic) return showMessage("Compila prima lo Step 1!", true);
-            const btn = document.getElementById('btn-research'); const loader = document.getElementById('loader-research');
-            btn.disabled = true; loader.classList.remove('hidden');
-
-            const prompt = `Esegui ricerca web Amazon (${state.language}) per Best Seller in: "${state.topic}".
-            JSON: { "best_seller": { "title": "T", "author": "A", "amazon_link": "L", "bsr_ranking": ["#1"], "sales_insights": "S" },
-            "niche_analysis": { "target_audience": "Aud", "pain_points": ["P1","P2"], "gap_analysis": "G", "winning_angle": "W", "target_values_and_visuals": "V" } }`;
-
+            const topic = document.getElementById('input-topic').value;
+            if (!topic) return showToast("Inserisci un titolo!", true);
+            toggleLoader('research', true);
             try {
-                const data = await fetchGeminiResearchJSON(prompt);
-                state.research = JSON.stringify(data.niche_analysis); saveProject();
-                
-                document.getElementById('research-content').innerHTML = `
-                    <h3>Competitor: ${data.best_seller.title}</h3>
-                    <p><b>Di:</b> ${data.best_seller.author} | <a href="${data.best_seller.amazon_link}" target="_blank">Vedi su Amazon</a></p>
-                    <p><b>BSR:</b> ${data.best_seller.bsr_ranking.join(', ')}</p>
-                    <hr>
-                    <h3>Target & Pain Points</h3>
-                    <p><b>Audience:</b> ${data.niche_analysis.target_audience}</p>
-                    <ul>${data.niche_analysis.pain_points.map(p=>`<li>${p}</li>`).join('')}</ul>
-                    <h3>Strategia (Winning Angle)</h3>
-                    <p><b>Mancanze (Gap):</b> ${data.niche_analysis.gap_analysis}</p>
-                    <p><b>Il Tuo Angolo:</b> ${data.niche_analysis.winning_angle}</p>
-                    <h3>Gusti Visivi</h3>
-                    <p>${data.niche_analysis.target_values_and_visuals}</p>
-                `;
-                document.getElementById('research-page').classList.remove('hidden');
-                showMessage("Ricerca mercato completata e salvata!"); if(window.innerWidth < 768) switchTab('preview');
-            } catch (e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
-        });
-
-        document.getElementById('btn-marketing').addEventListener('click', async () => {
-            state.topic = document.getElementById('input-topic').value; state.language = document.getElementById('select-language').value;
-            const btn = document.getElementById('btn-marketing'); const loader = document.getElementById('loader-marketing');
-            btn.disabled = true; loader.classList.remove('hidden');
-            const prompt = `Marketer KDP. Argomento: "${state.topic}" (${state.language}). TARGET: ${state.research}
-            JSON: { "pen_name": "Nome", "author_bio_html": "Bio in HTML <p><b>", "lead_magnet_copy_html": "CTA Lead Magnet HTML" }`;
-            try {
-                const mData = await fetchGeminiJSON(prompt);
-                state.penName = mData.pen_name; state.bioHtml = mData.author_bio_html; state.leadHtml = mData.lead_magnet_copy_html; saveProject();
-                
-                document.getElementById('preview-author').textContent = state.penName; document.getElementById('bio-pen-name').textContent = state.penName;
-                document.getElementById('author-bio-page').classList.remove('hidden'); document.getElementById('author-bio-content').innerHTML = state.bioHtml;
-                document.getElementById('marketing-page').classList.remove('hidden'); document.getElementById('lead-magnet-content').innerHTML = state.leadHtml;
-                showMessage("Autore e Backend creati!"); if(window.innerWidth < 768) switchTab('preview');
-            } catch (e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
+                const prompt = `Analisi mercato Amazon per un libro su: "${topic}" in ${state.language}. Trova gap e target. JSON: {"audience": "...", "angle": "...", "keywords": ["..."]}`;
+                const res = await fetchGemini(prompt, true);
+                state.research = JSON.stringify(res);
+                showToast("Analisi completata!");
+                saveState();
+            } catch (e) { showToast(e.message, true); }
+            toggleLoader('research', false);
         });
 
         document.getElementById('btn-toc').addEventListener('click', async () => {
-            const btn = document.getElementById('btn-toc'); const loader = document.getElementById('loader-toc');
-            btn.disabled = true; loader.classList.remove('hidden');
-            const prompt = `Argomento: ${state.topic}. ANALISI: ${state.research}. Crea Indice KDP in ${state.language}. 5-6 cap. JSON: ["Cap 1", "Cap 2"]`;
+            const topic = document.getElementById('input-topic').value;
+            if (!topic) return showToast("Inserisci un titolo!", true);
+            toggleLoader('toc', true);
             try {
-                const chapters = await fetchGeminiJSON(prompt);
-                state.chapters = chapters.map((t, i) => ({ id: i, title: t, subchapters: [] })); saveProject();
-                renderChaptersManager(); renderTOCPreview();
-                showMessage("Struttura base generata!"); document.getElementById('empty-manuscript-msg').classList.add('hidden');
-            } catch (e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
+                const prompt = `Crea un indice KDP di 5 capitoli per "${topic}" in ${state.language}. Solo nomi capitoli in array JSON: ["Cap 1", "Cap 2", ...]`;
+                const list = await fetchGemini(prompt, true);
+                state.chapters = list.map(title => ({ title, content: "" }));
+                renderChaptersManager();
+                renderTOC();
+                document.getElementById('empty-manuscript-msg').classList.add('hidden');
+                saveState();
+                showToast("Indice generato!");
+            } catch (e) { showToast(e.message, true); }
+            toggleLoader('toc', false);
         });
 
+        window.writeChapter = async (idx) => {
+            showToast(`Generazione capitolo ${idx+1}...`);
+            try {
+                const prompt = `Scrivi il capitolo "${state.chapters[idx].title}" per il libro "${document.getElementById('input-topic').value}". Lingua: ${state.language}. Usa markdown professionale. 800 parole.`;
+                const text = await fetchGemini(prompt);
+                state.chapters[idx].content = marked.parse(text);
+                renderManuscript();
+                saveState();
+                showToast("Capitolo pronto!");
+            } catch (e) { showToast(e.message, true); }
+        };
+
+        // --- RENDERING ---
         function renderChaptersManager() {
-            if(state.chapters.length === 0) return;
-            const container = document.getElementById('chapters-list'); const manager = document.getElementById('chapters-manager');
-            container.innerHTML = ''; manager.classList.remove('hidden');
-            state.chapters.forEach((chap, cIndex) => {
-                const chapEl = document.createElement('div'); chapEl.className = 'bg-white border border-indigo-100 p-3 sm:p-4 rounded-xl shadow-sm';
-                let html = `<div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-2">
-                    <strong class="text-sm font-bold text-indigo-900 leading-tight flex-1"><span class="text-indigo-400 mr-1">${cIndex + 1}.</span> ${chap.title}</strong>
-                    <button onclick="generateSubchapters(${cIndex})" class="w-full xl:w-auto text-[11px] uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-600 hover:text-white px-3 py-2 rounded-lg font-bold shrink-0 flex items-center justify-center transition-colors" id="btn-sub-${cIndex}">
-                        <i class="fas fa-sitemap mr-2"></i> ${t('js_sub_btn')} <div id="loader-sub-${cIndex}" class="hidden loader border-current border-t-transparent w-3 h-3 ml-2"></div>
-                    </button></div><div id="subs-container-${cIndex}" class="pl-2 sm:pl-4 border-l-2 border-indigo-100 space-y-3 mt-3">`;
-                if(chap.subchapters) {
-                    chap.subchapters.forEach((sub, sIndex) => {
-                        html += `<div class="bg-slate-50 border border-slate-200 p-3 rounded-lg text-sm flex flex-col gap-3">
-                            <span class="font-semibold text-slate-800 leading-snug">${cIndex+1}.${sIndex+1} ${sub.title}</span>
-                            <div class="flex gap-2">
-                                <button onclick="generateContent(${cIndex}, ${sIndex})" class="flex-1 py-2 bg-white text-indigo-600 hover:bg-indigo-50 rounded font-bold border border-indigo-200 shadow-sm text-xs" ${sub.content ? 'disabled style="opacity:0.4"' : ''}><i class="fas fa-pen mr-1"></i> ${t('js_txt_btn')}</button>
-                                <button onclick="generateImageForSub(${cIndex}, ${sIndex})" class="flex-1 py-2 bg-white text-purple-600 hover:bg-purple-50 rounded font-bold border border-purple-200 shadow-sm text-xs" ${sub.image ? 'disabled style="opacity:0.4"' : ''}><i class="fas fa-image mr-1"></i> ${t('js_img_btn')}</button>
-                            </div></div>`;
-                    });
-                }
-                html += `</div>`; chapEl.innerHTML = html; container.appendChild(chapEl);
+            const list = document.getElementById('chapters-list');
+            list.innerHTML = "";
+            document.getElementById('chapters-manager').classList.remove('hidden');
+            state.chapters.forEach((chap, i) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100";
+                div.innerHTML = `
+                    <div class="flex-1 pr-3">
+                        <span class="text-[10px] text-slate-400 block font-bold">CAP ${i+1}</span>
+                        <span class="text-xs font-black text-slate-800">${chap.title}</span>
+                    </div>
+                    <button onclick="writeChapter(${i})" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase">Scrivi</button>
+                `;
+                list.appendChild(div);
             });
         }
 
-        window.generateSubchapters = async (cIdx) => {
-            const btn = document.getElementById(`btn-sub-${cIdx}`); const loader = document.getElementById(`loader-sub-${cIdx}`);
-            btn.disabled = true; loader.classList.remove('hidden');
-            const prompt = `Libro: "${state.topic}". Cap: "${state.chapters[cIdx].title}". Target: ${state.research}\nGenera 3 sub-cap. ${state.language}. JSON: ["Sub 1", "Sub 2", "Sub 3"]`;
-            try {
-                const subs = await fetchGeminiJSON(prompt);
-                state.chapters[cIdx].subchapters = subs.map(t => ({ title: t, content: null, image: null })); saveProject();
-                renderChaptersManager(); renderTOCPreview(); renderManuscript();
-            } catch (e) { showMessage(e.message, true); btn.disabled = false; loader.classList.add('hidden'); }
-        };
-
-        window.generateContent = async (c, s) => {
-            const sub = state.chapters[c].subchapters[s]; const style = document.getElementById('select-style').value;
-            const prompt = `Scrivi contenuto "${sub.title}" (Cap: "${state.chapters[c].title}"). Lingua: ${state.language}. Tono: "${style}".\nANGLE: ${state.research}\nUsa Markdown. Scrivi 400 parole.`;
-            try {
-                let text = await fetchGeminiData(prompt);
-                sub.content = marked.parse(text); saveProject();
-                renderChaptersManager(); renderManuscript();
-            } catch (e) { showMessage(e.message, true); }
-        };
-
-        window.generateImageForSub = async (c, s) => {
-            const sub = state.chapters[c].subchapters[s];
-            state.artStyle = document.getElementById('input-art-style').value; state.character = document.getElementById('input-character').value;
-            let p = `Illustration for "${sub.title}" book "${state.topic}". `;
-            if (state.character) p += `Feature: ${state.character}. `;
-            if (state.artStyle) p += `Style: ${state.artStyle}. `; else p += `Minimalist b/w. `;
-            try {
-                const enPrompt = await fetchGeminiData(`Translate for AI image generator (max 40 words): ${p}`);
-                sub.image = await fetchImagen(enPrompt); saveProject();
-                renderChaptersManager(); renderManuscript();
-            } catch (e) { showMessage(e.message, true); }
-        };
-
-        document.getElementById('btn-format-all').addEventListener('click', async () => {
-            const style = document.getElementById('select-style').value;
-            const btn = document.getElementById('btn-format-all'); const loader = document.getElementById('loader-format');
-            btn.disabled = true; loader.classList.remove('hidden'); showMessage("Editing totale in corso...");
-            try {
-                for (let c of state.chapters) {
-                    if(!c.subchapters) continue;
-                    for (let s of c.subchapters) {
-                        if (s.content) {
-                            const prompt = `Riscrivi migliorando Tono: "${style}". Lingua: ${state.language}. Testo base:\n${s.content}\nRestituisci testo in Markdown puro.`;
-                            let md = await fetchGeminiData(prompt);
-                            s.content = marked.parse(md); renderManuscript(); saveProject();
-                        }
-                    }
-                } showMessage("Editing Completato!");
-            } catch(e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
-        });
-
-        document.getElementById('btn-cover').addEventListener('click', async () => {
-            state.trim = document.getElementById('select-trim').value;
-            state.artStyle = document.getElementById('input-art-style').value; state.character = document.getElementById('input-character').value;
-            const btn = document.getElementById('btn-cover'); const loader = document.getElementById('loader-cover');
-            btn.disabled = true; loader.classList.remove('hidden');
-            let p = `Image prompt (40 words) Amazon cover "${state.topic}".\n${state.targetVisuals} `;
-            if (state.character) p += `Feature: ${state.character}. `;
-            if (state.artStyle) p += `Style: ${state.artStyle}. `; p += `No text. High contrast.`;
-            try {
-                const imgP = await fetchGeminiData(p); const imgUrl = await fetchImagen(imgP);
-                state.coverUrl = imgUrl; saveProject();
-                
-                const title = state.seoData ? state.seoData.title : state.topic;
-                document.getElementById('cover-page').innerHTML = `<div id="generated-cover-container" style="background-image: url('${imgUrl}');"><div class="overlay"></div><div class="p-6 sm:p-10 border-t-8 border-amber-500 bg-slate-900/80 backdrop-blur-sm mx-4 w-11/12 md:w-3/4 absolute bottom-6 sm:bottom-12 rounded-xl shadow-2xl text-left border border-white/10"><h1 class="text-3xl sm:text-5xl font-black mb-3 text-white leading-tight">${title}</h1><p class="text-base sm:text-lg text-amber-400 font-bold mb-4">${state.seoData ? state.seoData.subtitle : ''}</p><p class="text-xs text-white/80 border-t border-white/20 pt-2 font-black uppercase tracking-widest">${state.penName}</p></div></div>`;
-                if(window.innerWidth < 768) switchTab('preview');
-            } catch (e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
-        });
-
-        document.getElementById('btn-seo').addEventListener('click', async () => {
-            state.topic = document.getElementById('input-topic').value; state.language = document.getElementById('select-language').value;
-            const btn = document.getElementById('btn-seo'); const loader = document.getElementById('loader-seo');
-            btn.disabled = true; loader.classList.remove('hidden');
-            const prompt = `SEO KDP. Nicchia: "${state.topic}". Lingua: "${state.language}".\n${state.research}\nJSON: { "title": "Titolo", "subtitle": "Sottotitolo", "keywords": ["k1","k2","k3","k4","k5","k6","k7"], "html_description": "Descrizione AIDA HTML" }`;
-            try {
-                const seoData = await fetchGeminiJSON(prompt);
-                state.seoData = seoData; saveProject();
-                
-                document.getElementById('kdp-backend-page').classList.remove('hidden');
-                document.getElementById('seo-title').textContent = seoData.title; document.getElementById('preview-title').textContent = seoData.title;
-                document.getElementById('seo-subtitle').textContent = seoData.subtitle;
-                const kwC = document.getElementById('seo-keywords'); kwC.innerHTML = '';
-                seoData.keywords.forEach(kw => { const s = document.createElement('span'); s.className = 'bg-amber-100 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm'; s.textContent = kw; kwC.appendChild(s); });
-                document.getElementById('seo-desc').textContent = seoData.html_description;
-                if(window.innerWidth < 768) switchTab('preview');
-            } catch (e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
-        });
-
-        document.getElementById('btn-video-ad').addEventListener('click', async () => {
-            state.topic = document.getElementById('input-topic').value; state.language = document.getElementById('select-language').value;
-            const btn = document.getElementById('btn-video-ad'); const loader = document.getElementById('loader-video');
-            btn.disabled = true; loader.classList.remove('hidden');
-            const title = state.seoData ? state.seoData.title : state.topic;
-            const prompt = `Video Ad Amazon: "${title}". Lingua: ${state.language}.\n${state.research}\n15-30s. HOOK, PAIN, SOLUTION, CTA. Dividi [VISUAL]/[AUDIO]. Usa Markdown.`;
-            try {
-                let md = await fetchGeminiData(prompt);
-                state.videoHtml = marked.parse(md); saveProject();
-                
-                document.getElementById('kdp-backend-page').classList.remove('hidden'); document.getElementById('video-ad-section').classList.remove('hidden');
-                document.getElementById('ui-spec-lang').textContent = state.language; document.getElementById('video-script-content').innerHTML = state.videoHtml;
-                if(window.innerWidth < 768) { switchTab('preview'); setTimeout(() => document.getElementById('video-ad-section').scrollIntoView({ behavior: 'smooth' }), 300); }
-            } catch (e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
-        });
-
-        function switchTab(tab) {
-            if(window.innerWidth >= 768) return; 
-            const e = document.getElementById('panel-editor'), p = document.getElementById('panel-preview'), te = document.getElementById('tab-editor'), tp = document.getElementById('tab-preview');
-            if(tab === 'editor') {
-                e.classList.remove('hidden'); e.classList.add('flex'); p.classList.add('hidden'); p.classList.remove('flex');
-                te.classList.replace('text-slate-400', 'text-amber-400'); te.classList.replace('border-transparent', 'border-amber-400'); te.classList.add('bg-slate-800/50');
-                tp.classList.replace('text-amber-400', 'text-slate-400'); tp.classList.replace('border-amber-400', 'border-transparent'); tp.classList.remove('bg-slate-800/50');
-            } else {
-                e.classList.add('hidden'); e.classList.remove('flex'); p.classList.remove('hidden'); p.classList.add('flex');
-                tp.classList.replace('text-slate-400', 'text-amber-400'); tp.classList.replace('border-transparent', 'border-amber-400'); tp.classList.add('bg-slate-800/50');
-                te.classList.replace('text-amber-400', 'text-slate-400'); te.classList.replace('border-amber-400', 'border-transparent'); te.classList.remove('bg-slate-800/50');
-            }
-        }
-        document.getElementById('tab-editor').addEventListener('click', () => switchTab('editor'));
-        document.getElementById('tab-preview').addEventListener('click', () => switchTab('preview'));
-        window.addEventListener('resize', () => {
-            if (window.innerWidth >= 768) {
-                document.getElementById('panel-editor').classList.remove('hidden'); document.getElementById('panel-editor').classList.add('flex');
-                document.getElementById('panel-preview').classList.remove('hidden'); document.getElementById('panel-preview').classList.add('flex');
-            } else { switchTab(document.getElementById('tab-editor').classList.contains('text-amber-400') ? 'editor' : 'preview'); }
-        });
-
-        document.getElementById('btn-export-pdf').addEventListener('click', () => {
-            const topic = state.topic || 'KDP_Manoscritto';
-            const beElements = document.querySelectorAll('.kdp-backend-only'); 
-            beElements.forEach(el => el.style.display = 'none');
-            
-            const exportArea = document.getElementById('book-export-area');
-            exportArea.classList.add('pdf-export-mode'); 
-
-            const wasHidden = document.getElementById('panel-preview').classList.contains('hidden');
-            if (wasHidden) { document.getElementById('panel-preview').classList.remove('hidden'); document.getElementById('panel-preview').classList.add('flex'); }
-            
-            const loaderOverlay = document.getElementById('fullscreen-loader');
-            loaderOverlay.classList.remove('hidden'); loaderOverlay.classList.add('flex');
-            
-            const trimSelection = document.getElementById('select-trim').value;
-            let pdfFormat = 'a4'; 
-            if (trimSelection === '6x9') pdfFormat = [152.4, 228.6];
-            if (trimSelection === '5.5x8.5') pdfFormat = [139.7, 215.9];
-            if (trimSelection === '8.5x11') pdfFormat = [215.9, 279.4];
-
-            setTimeout(() => {
-                const opt = { 
-                    margin: 0, 
-                    filename: topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()+'.pdf', 
-                    image: { type: 'jpeg', quality: 0.95 }, 
-                    html2canvas: { scale: 2, useCORS: true, windowWidth: 800, logging: false }, 
-                    jsPDF: { unit: 'mm', format: pdfFormat, orientation: 'portrait' } 
-                };
-
-                html2pdf().set(opt).from(exportArea).toPdf().get('pdf').then(function (pdf) {
-                    const totalPages = pdf.internal.getNumberOfPages();
-                    for (let i = 1; i <= totalPages; i++) {
-                        pdf.setPage(i); pdf.setFontSize(10); pdf.setTextColor(120, 120, 120); 
-                        pdf.text(String(i), pdf.internal.pageSize.getWidth() / 2, pdf.internal.pageSize.getHeight() - 12, { align: 'center' });
-                    }
-                }).save().then(() => {
-                    beElements.forEach(el => el.style.display = ''); exportArea.classList.remove('pdf-export-mode'); 
-                    if (wasHidden) { document.getElementById('panel-preview').classList.add('hidden'); document.getElementById('panel-preview').classList.remove('flex'); }
-                    loaderOverlay.classList.remove('flex'); loaderOverlay.classList.add('hidden'); showMessage("PDF Scaricato con successo!"); 
-                }).catch(e => {
-                    beElements.forEach(el => el.style.display = ''); exportArea.classList.remove('pdf-export-mode'); 
-                    if (wasHidden) { document.getElementById('panel-preview').classList.add('hidden'); document.getElementById('panel-preview').classList.remove('flex'); }
-                    loaderOverlay.classList.remove('flex'); loaderOverlay.classList.add('hidden'); showMessage("Errore PDF: Riprova.", true);
-                });
-            }, 400); 
-        });
-
-        function renderTOCPreview() {
-            const tocContent = document.getElementById('toc-content');
+        function renderTOC() {
             document.getElementById('toc-page').classList.remove('hidden');
-            let html = '<ul class="list-none p-0 m-0">';
-            state.chapters.forEach((chap, cIndex) => {
-                html += `<li class="font-bold mt-5 border-b border-slate-200 pb-2">${cIndex + 1}. ${chap.title}</li>`;
-                if(chap.subchapters && chap.subchapters.length > 0) {
-                    html += '<ul class="pl-4 sm:pl-8 mt-3 space-y-2">';
-                    chap.subchapters.forEach((sub, sIndex) => { html += `<li class="text-slate-600 text-base sm:text-lg">${cIndex + 1}.${sIndex + 1}. ${sub.title}</li>`; });
-                    html += '</ul>';
-                }
-            });
-            tocContent.innerHTML = html + '</ul>';
+            document.getElementById('toc-content').innerHTML = state.chapters.map((c, i) => `<div class="flex justify-between border-b border-slate-100 pb-2"><span>${i+1}. ${c.title}</span><span class="text-slate-300">......</span></div>`).join("");
         }
 
         function renderManuscript() {
-            const manuscript = document.getElementById('manuscript-content'); manuscript.innerHTML = '';
-            state.chapters.forEach((chap, cIndex) => {
-                const chapDiv = document.createElement('div'); chapDiv.className = 'page-break pt-8';
-                chapDiv.innerHTML = `<h1 class="text-3xl sm:text-5xl mt-6 font-black text-slate-800">Capitolo ${cIndex + 1} <br> <span class="text-xl sm:text-3xl text-slate-500 font-medium tracking-wide mt-2 block">${chap.title}</span></h1>`;
-                if(chap.subchapters) {
-                    chap.subchapters.forEach((sub, sIndex) => {
-                        const subDiv = document.createElement('div'); subDiv.innerHTML = `<h2 class="text-2xl sm:text-3xl mt-12 mb-6 font-bold text-slate-800 border-b-2 border-slate-100 pb-3">${cIndex + 1}.${sIndex + 1} ${sub.title}</h2>`;
-                        if(sub.image) subDiv.innerHTML += `<img src="${sub.image}" class="my-6 rounded-xl shadow-lg border border-slate-100 w-full max-w-2xl mx-auto">`;
-                        if(sub.content) subDiv.innerHTML += `<div class="prose prose-slate prose-lg max-w-none text-justify mx-auto">${sub.content}</div>`;
-                        else subDiv.innerHTML += `<p class="italic text-slate-400 text-sm my-4 bg-slate-50 p-4 rounded text-center">[Contenuto da generare]</p>`;
-                        chapDiv.appendChild(subDiv);
-                    });
-                } manuscript.appendChild(chapDiv);
-            });
+            const ms = document.getElementById('manuscript-content');
+            ms.innerHTML = state.chapters.map((c, i) => `
+                <div class="page-break">
+                    <h2 class="text-3xl font-black text-slate-900 border-b-4 border-slate-900 pb-4 mb-8">Capitolo ${i+1}: ${c.title}</h2>
+                    <div class="prose prose-slate max-w-none">${c.content || "<i>Contenuto in attesa...</i>"}</div>
+                </div>
+            `).join("");
         }
 
-        window.onload = () => {
-            updateUILanguage('it');
-            loadProject(); 
+        // --- MARKETING ---
+        document.getElementById('btn-cover').addEventListener('click', async () => {
+            toggleLoader('cover', true);
+            try {
+                const p = `High quality book cover for "${document.getElementById('input-topic').value}", professional design, minimal, no text.`;
+                const url = await fetchImagen(p);
+                state.coverUrl = url;
+                document.getElementById('cover-page').innerHTML = `
+                    <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${url}')"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                    <div class="relative z-10 p-10 mt-auto text-center w-full">
+                        <h1 class="text-6xl font-black text-white leading-tight drop-shadow-lg">${document.getElementById('input-topic').value}</h1>
+                        <p class="text-2xl font-black text-indigo-400 mt-4 uppercase tracking-[0.3em]">${state.penName || 'Author'}</p>
+                    </div>`;
+                saveState();
+                showToast("Copertina pronta!");
+            } catch (e) { showToast(e.message, true); }
+            toggleLoader('cover', false);
+        });
+
+        document.getElementById('btn-seo').addEventListener('click', async () => {
+            toggleLoader('seo', true);
+            try {
+                const prompt = `Genera Metadata KDP per: "${document.getElementById('input-topic').value}". JSON: {"title": "...", "subtitle": "...", "keywords": ["..."], "desc": "HTML formatted AIDA description"}`;
+                const res = await fetchGemini(prompt, true);
+                state.seoData = res;
+                document.getElementById('kdp-backend-page').classList.remove('hidden');
+                document.getElementById('seo-title').innerText = res.title;
+                document.getElementById('seo-subtitle').innerText = res.subtitle;
+                document.getElementById('seo-keywords').innerHTML = res.keywords.map(k => `<span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-bold">${k}</span>`).join("");
+                document.getElementById('seo-desc').innerText = res.desc;
+                saveState();
+                showToast("SEO completato!");
+            } catch (e) { showToast(e.message, true); }
+            toggleLoader('seo', false);
+        });
+
+        // --- UTILS ---
+        function toggleLoader(id, show) {
+            const l = document.getElementById(`loader-${id}`);
+            if (l) l.classList.toggle('hidden', !show);
+        }
+
+        function showToast(msg, error = false) {
+            const t = document.getElementById('status-message');
+            t.innerHTML = `<i class="fas ${error ? 'fa-exclamation-circle text-red-500' : 'fa-check-circle text-emerald-500'}"></i> <span class="text-xs font-bold">${msg}</span>`;
+            t.classList.add('show');
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function openApiModal(msg = "") {
+            document.getElementById('api-key-modal').classList.remove('hidden');
+            document.getElementById('api-key-modal').classList.add('flex');
+            if (msg) document.getElementById('api-modal-msg').innerText = msg;
+        }
+
+        document.getElementById('btn-save-api-key').addEventListener('click', () => {
+            const v = document.getElementById('input-api-key').value.trim();
+            if (v) { 
+                localStorage.setItem('kdp_gemini_key', v); 
+                document.getElementById('api-key-modal').classList.add('hidden'); 
+                showToast("AI Collegata!"); 
+            }
+        });
+
+        document.getElementById('btn-close-api-modal').addEventListener('click', () => document.getElementById('api-key-modal').classList.add('hidden'));
+
+        function saveState() {
+            state.topic = document.getElementById('input-topic').value;
+            state.language = document.getElementById('select-language').value;
+            localStorage.setItem('kdp_mobile_state', JSON.stringify(state));
+        }
+
+        function loadState() {
+            const s = localStorage.getItem('kdp_mobile_state');
+            if (s) {
+                state = { ...state, ...JSON.parse(s) };
+                document.getElementById('input-topic').value = state.topic;
+                document.getElementById('select-language').value = state.language;
+                if (state.chapters.length > 0) {
+                    renderChaptersManager(); renderTOC(); renderManuscript();
+                    document.getElementById('empty-manuscript-msg').classList.add('hidden');
+                }
+            }
+        }
+
+        // --- NAVIGATION MOBILE ---
+        function switchTab(tab) {
+            const editor = document.getElementById('panel-editor');
+            const preview = document.getElementById('panel-preview');
+            const tabE = document.getElementById('tab-editor');
+            const tabP = document.getElementById('tab-preview');
+
+            if (tab === 'editor') {
+                editor.classList.remove('hidden');
+                preview.classList.add('hidden');
+                tabE.classList.add('text-indigo-600');
+                tabE.classList.remove('text-slate-400');
+                tabP.classList.remove('text-indigo-600');
+                tabP.classList.add('text-slate-400');
+            } else {
+                editor.classList.add('hidden');
+                preview.classList.remove('hidden');
+                preview.classList.add('flex');
+                tabP.classList.add('text-indigo-600');
+                tabP.classList.remove('text-slate-400');
+                tabE.classList.remove('text-indigo-600');
+                tabE.classList.add('text-slate-400');
+            }
+        }
+
+        document.getElementById('tab-editor').addEventListener('click', () => switchTab('editor'));
+        document.getElementById('tab-preview').addEventListener('click', () => switchTab('preview'));
+        document.getElementById('btn-open-settings').addEventListener('click', () => openApiModal());
+
+        // --- PDF EXPORT ---
+        const exportPdf = () => {
+            const loader = document.getElementById('fullscreen-loader');
+            loader.classList.remove('hidden'); loader.classList.add('flex');
+            
+            const area = document.getElementById('book-export-area');
+            const backend = document.querySelectorAll('.kdp-backend-only');
+            backend.forEach(el => el.style.display = 'none');
+
+            // Reset scale for export
+            const originalTransform = area.style.transform;
+            area.style.transform = 'none';
+
+            const opt = {
+                margin: 0,
+                filename: 'kdp_pro_manuscript.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(area).save().then(() => {
+                backend.forEach(el => el.style.display = 'block');
+                area.style.transform = originalTransform;
+                loader.classList.add('hidden');
+                showToast("PDF Salvato!");
+            });
         };
 
+        // Correzione degli Event Listeners per evitare TypeError se gli elementi sono nulli
+        const btnExportPdf = document.getElementById('btn-export-pdf');
+        if (btnExportPdf) btnExportPdf.addEventListener('click', exportPdf);
+
+        const mobileExportPdf = document.getElementById('mobile-export-pdf');
+        if (mobileExportPdf) mobileExportPdf.addEventListener('click', exportPdf);
+
+        document.getElementById('ui-lang-selector').addEventListener('change', e => updateUILanguage(e.target.value));
+        document.getElementById('btn-reset-project').addEventListener('click', () => {
+            if(confirm("Vuoi cancellare tutto e ricominciare?")) {
+                localStorage.removeItem('kdp_mobile_state');
+                location.reload();
+            }
+        });
+
+        window.onload = () => { loadState(); updateUILanguage('it'); };
     </script>
 </body>
 </html>
