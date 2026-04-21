@@ -5,37 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>KDP AI Studio - PRO Publisher Edition</title>
     
-    <!-- Preconnect & DNS Prefetch per performance massime -->
     <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     
-    <!-- Tailwind CSS + Typography Plugin per formattazione testi Premium -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Librerie pesanti caricate in modo differito (non bloccano il rendering) -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 
     <style>
-        /* Ottimizzazioni Mobile Avanzate e Touch */
         body { 
             -webkit-tap-highlight-color: transparent; 
             touch-action: manipulation;
-            overscroll-behavior-y: none; /* Previene il "pull-to-refresh" fastidioso su mobile */
+            overscroll-behavior-y: none; 
         }
         .scrollable-panel { 
             -webkit-overflow-scrolling: touch; 
             scroll-behavior: smooth;
         }
 
-        /* Supporto per Notch e Home Indicator su iPhone/Android moderni */
         .safe-pb { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
         .safe-mb { margin-bottom: env(safe-area-inset-bottom); }
 
-        /* Stili per l'anteprima del libro (da esportare in PDF) */
         #book-preview { background-color: white; font-family: 'Georgia', serif; color: #333; line-height: 1.6; }
         .page-break { page-break-after: always; break-after: page; }
         
@@ -47,7 +41,6 @@
         .book-content ul { list-style-type: disc; padding-left: 2em; margin-bottom: 1em; }
         .book-content li { margin-bottom: 0.5em; }
         
-        /* Stili per la copertina generata */
         #generated-cover-container {
             width: 100%; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
             background-size: cover; background-position: center; position: relative; text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
@@ -65,7 +58,6 @@
 
         .kdp-html-box { background-color: #0f172a; color: #a5b4fc; font-family: ui-monospace, monospace; padding: 1rem; border-radius: 0.5rem; white-space: pre-wrap; word-break: break-all; font-size: 0.875rem; border: 1px solid #334155; }
         
-        /* --- KDP PRINT MARGINS & BLEED (Ottimizzati) --- */
         .pdf-export-mode { padding: 0 !important; background-color: white !important; }
         .pdf-export-mode .page-break { padding-top: 25mm !important; padding-bottom: 25mm !important; box-sizing: border-box; }
         .pdf-export-mode h1, .pdf-export-mode h2, .pdf-export-mode h3, .pdf-export-mode p, .pdf-export-mode ul, .pdf-export-mode .prose, .pdf-export-mode #cover-placeholder, .pdf-export-mode #author-bio-content, .pdf-export-mode #lead-magnet-content, .pdf-export-mode #toc-content {
@@ -79,7 +71,6 @@
 </head>
 <body class="bg-slate-100 h-screen overflow-hidden flex flex-col font-sans antialiased text-slate-800">
 
-    <!-- Modal Impostazioni API Key -->
     <div id="api-key-modal" class="fixed inset-0 bg-slate-900/95 z-[110] hidden items-center justify-center p-4 backdrop-blur-md transition-opacity">
         <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md transform transition-all border border-slate-200">
             <h2 class="text-2xl font-black text-slate-800 mb-3 flex items-center"><i class="fas fa-key text-amber-500 mr-3"></i> Setup Accesso AI</h2>
@@ -95,17 +86,14 @@
         </div>
     </div>
 
-    <!-- Schermata di caricamento Full Screen (Mobile friendly) -->
     <div id="fullscreen-loader" class="fixed inset-0 bg-slate-900/95 z-[100] hidden flex-col items-center justify-center text-white backdrop-blur-md transition-opacity duration-300">
         <div class="loader border-amber-500 border-t-transparent w-16 h-16 mb-6 border-4"></div>
         <p class="text-2xl font-black mb-3 text-center px-4 tracking-tight" data-i18n="pdf_loading_title">Stampa PDF in corso...</p>
         <p class="text-sm text-slate-400 text-center px-8 max-w-md font-medium leading-relaxed" data-i18n="pdf_loading_desc">Stiamo applicando la gabbia KDP e i margini professionali. Non chiudere o ricaricare la pagina.</p>
     </div>
 
-    <!-- Area Messaggi Fluttuante -->
     <div id="status-message" class="p-4 rounded-xl hidden z-[90] shadow-2xl fixed top-20 left-4 right-4 md:left-auto md:right-8 md:w-96 transition-all transform duration-300 flex items-center gap-3 border"></div>
 
-    <!-- Header -->
     <header class="bg-slate-900 text-amber-500 p-3 md:p-4 shadow-lg flex justify-between items-center z-10 shrink-0 border-b border-slate-700/50 relative">
         <div class="flex items-center gap-3 w-1/3">
             <h1 class="text-lg md:text-xl font-black truncate tracking-wide flex items-center">
@@ -141,11 +129,9 @@
 
     <div class="flex flex-1 overflow-hidden flex-col md:flex-row relative">
         
-        <!-- Sidebar - Controlli (PIPELINE A 6 STEP) -->
         <div id="panel-editor" class="w-full md:w-[380px] lg:w-[420px] bg-white shadow-[4px_0_24px_rgba(0,0,0,0.04)] overflow-y-auto scrollable-panel border-r border-slate-200 flex flex-col safe-pb z-10">
             <div class="p-4 md:p-6 space-y-6">
                 
-                <!-- STEP 1: Setup Base -->
                 <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200/60 shadow-sm">
                     <h2 class="font-black text-slate-800 text-lg mb-4 flex items-center"><span class="bg-slate-900 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">1</span> <span data-i18n="s1_title">Setup Progetto</span></h2>
                     
@@ -178,7 +164,6 @@
                     </div>
                 </div>
 
-                <!-- STEP 2: Ricerca di Mercato -->
                 <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-200 shadow-sm relative overflow-hidden group hover:bg-blue-50 transition-colors">
                     <h2 class="font-black text-blue-900 text-lg mb-2 flex items-center"><span class="bg-blue-600 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">2</span> <span data-i18n="s2_title">Ricerca Amazon</span></h2>
                     <p class="text-sm text-blue-800/80 mb-4 font-medium leading-snug" data-i18n="s2_desc">Estrae i problemi del target dal best seller attuale.</p>
@@ -189,7 +174,6 @@
                     </button>
                 </div>
 
-                <!-- STEP 3: Identità & Marketing -->
                 <div class="bg-purple-50/50 p-5 rounded-2xl border border-purple-200 shadow-sm hover:bg-purple-50 transition-colors">
                     <h2 class="font-black text-purple-900 text-lg mb-4 flex items-center"><span class="bg-purple-600 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">3</span> <span data-i18n="s3_title">Branding Libro</span></h2>
                     
@@ -210,7 +194,6 @@
                     </button>
                 </div>
 
-                <!-- STEP 4: Struttura & Manoscritto -->
                 <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-200 shadow-sm transition-colors">
                     <h2 class="font-black text-indigo-900 text-lg mb-2 flex items-center"><span class="bg-indigo-600 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">4</span> <span data-i18n="s4_title">Manoscritto</span></h2>
                     <p class="text-sm text-indigo-800/80 mb-4 font-medium leading-snug" data-i18n="s4_desc">Crea l'indice e scrivi i capitoli ottimizzati per il target.</p>
@@ -220,16 +203,13 @@
                         <div id="loader-toc" class="hidden loader border-white border-t-transparent ml-2"></div>
                     </button>
 
-                    <!-- Gestione Capitoli Dinamica -->
                     <div id="chapters-manager" class="mt-6 hidden pt-2">
                         <h3 class="font-black text-indigo-900 text-sm mb-4 tracking-wide border-b border-indigo-200 pb-2" data-i18n="s4_chaps">Sviluppo Capitoli</h3>
                         <div id="chapters-list" class="space-y-4">
-                            <!-- Popolato via JS -->
                         </div>
                     </div>
                 </div>
 
-                <!-- STEP 5: Revisione Finale -->
                 <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-200 shadow-sm hover:bg-emerald-50 transition-colors">
                     <h2 class="font-black text-emerald-900 text-lg mb-4 flex items-center"><span class="bg-emerald-600 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">5</span> <span data-i18n="s5_title">Editing & Tone</span></h2>
                     
@@ -248,7 +228,6 @@
                     </button>
                 </div>
 
-                <!-- STEP 6: Lancio & Materiali Promozionali -->
                 <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-5 rounded-2xl border border-amber-300 shadow-sm relative">
                     <div class="absolute -top-3 right-4 bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm uppercase tracking-widest">Lancio</div>
                     <h2 class="font-black text-amber-900 text-lg mb-5 flex items-center"><span class="bg-amber-500 text-slate-900 w-6 h-6 rounded-full inline-flex items-center justify-center text-sm mr-2.5 shadow-sm">6</span> <span data-i18n="s6_title">Materiali Marketing</span></h2>
@@ -274,11 +253,9 @@
             </div>
         </div>
 
-        <!-- Anteprima Libro (Area Esportazione & KDP Backend) -->
         <div id="panel-preview" class="w-full md:w-2/3 bg-slate-200 p-3 sm:p-6 md:p-10 overflow-y-auto scrollable-panel hidden md:flex justify-center relative pb-28 md:pb-10 shadow-inner">
             <div id="book-export-area" class="bg-white w-full max-w-[850px] min-h-[1100px] shadow-[0_10px_40px_rgba(0,0,0,0.1)] p-6 sm:p-10 md:p-16 book-content relative">
                 
-                <!-- 🚀 SEZIONE BACKEND KDP -->
                 <div id="kdp-backend-page" class="kdp-backend-only hidden bg-amber-50/80 p-5 sm:p-8 rounded-2xl border-2 border-amber-300 border-dashed mb-14 shadow-sm relative break-words">
                     <div class="absolute -top-4 right-6 bg-amber-500 text-slate-900 text-xs font-black px-4 py-1.5 rounded-full shadow-md uppercase tracking-widest" data-i18n="kdp_badge">Riservato Dashboard KDP</div>
                     <h2 class="text-amber-900 font-black mb-8 text-2xl border-b border-amber-200 pb-3 flex items-center"><i class="fab fa-amazon mr-3 text-amber-500 text-3xl"></i> <span data-i18n="kdp_title">Metadati & Listing</span></h2>
@@ -304,7 +281,6 @@
                             <div id="seo-desc" class="kdp-html-box text-sm max-h-64 overflow-y-auto border border-slate-700">...</div>
                         </div>
 
-                        <!-- SEZIONE VIDEO AD -->
                         <div id="video-ad-section" class="hidden mt-10 border-t border-amber-300 border-dashed pt-8">
                             <h3 class="text-xl font-black text-red-600 mb-5 flex items-center"><i class="fas fa-film mr-3 text-2xl"></i> Amazon Video Ads Script</h3>
                             <div class="bg-slate-900 text-slate-300 p-5 rounded-2xl text-sm mb-6 border border-slate-700 shadow-inner">
@@ -316,13 +292,11 @@
                                     <li class="flex items-center"><i class="fas fa-check-circle text-emerald-500 mr-2"></i> Audio: <b id="ui-spec-lang" class="text-white ml-1 uppercase">Local</b></li>
                                 </ul>
                             </div>
-                            <!-- Implementato Typography (prose) per formattazione perfetta -->
                             <div id="video-script-content" class="bg-white p-6 sm:p-8 border border-slate-200 rounded-2xl text-slate-800 shadow-sm prose prose-slate max-w-none prose-p:leading-relaxed prose-strong:text-red-600"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Pagina Copertina (Visiva nel PDF) -->
                 <div id="cover-page" class="page-break flex flex-col items-center justify-center min-h-[600px] md:min-h-[850px] border-[12px] border-slate-50 p-6 relative bg-white overflow-hidden shadow-inner">
                     <div id="cover-placeholder" class="text-center w-full px-4 relative z-10 flex flex-col items-center">
                         <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
@@ -334,29 +308,22 @@
                     </div>
                 </div>
 
-                <!-- Ricerca Nicchia & Gap (Solo per l'autore) -->
                 <div id="research-page" class="kdp-backend-only page-break hidden">
                     <h2 class="text-blue-600 text-sm font-black uppercase tracking-widest mb-6 border-b-2 border-blue-100 pb-3 flex items-center"><i class="fas fa-search-dollar mr-2 text-xl"></i> <span data-i18n="res_title">Ricerca di Mercato (Non Stampata)</span></h2>
-                    <!-- Prose usato per formattare il markdown di Gemini -->
                     <div id="research-content" class="bg-blue-50/50 p-6 sm:p-8 rounded-2xl border border-blue-100 prose prose-blue prose-sm sm:prose-base max-w-none"></div>
                 </div>
 
-                <!-- Lead Magnet (Stampato a inizio libro) -->
                 <div id="marketing-page" class="page-break hidden bg-gradient-to-br from-indigo-50 to-white border-l-8 border-indigo-500 p-8 sm:p-12 my-8 rounded-r-2xl shadow-sm break-words">
                     <h2 class="text-indigo-800 mb-8 text-2xl sm:text-3xl font-black flex items-center"><i class="fas fa-gift mr-4 text-indigo-500 text-4xl"></i> <span data-i18n="lead_title">Un Regalo Esclusivo Per Te</span></h2>
-                    <!-- Prose per HTML formattato bene -->
                     <div id="lead-magnet-content" class="prose prose-indigo prose-lg max-w-none prose-a:text-indigo-600 prose-a:font-bold"></div>
                 </div>
 
-                <!-- Sommario -->
                 <div id="toc-page" class="page-break hidden break-words pt-10">
                     <h1 class="text-4xl sm:text-5xl font-black text-slate-800 border-b-4 border-slate-800 pb-4 mb-10 inline-block" data-i18n="toc_title">Indice dei Contenuti</h1>
                     <div id="toc-content" class="text-lg sm:text-xl font-medium text-slate-700 leading-loose"></div>
                 </div>
 
-                <!-- Contenuto Manoscritto (Tutti i Capitoli) -->
                 <div id="manuscript-content" class="break-words">
-                    <!-- Stato Vuoto -->
                     <div class="flex flex-col items-center justify-center text-center py-20 sm:py-32 px-6 border-2 border-dashed border-slate-300 rounded-3xl m-4 bg-slate-50/50" id="empty-manuscript-msg">
                         <div class="w-16 h-16 bg-slate-200 text-slate-400 rounded-full flex items-center justify-center mb-4">
                             <i class="fas fa-pencil-alt text-2xl"></i>
@@ -366,7 +333,6 @@
                     </div>
                 </div>
                 
-                <!-- Autore Bio (Stampata alla fine) -->
                 <div id="author-bio-page" class="page-break hidden mt-20 pt-16 border-t-8 border-slate-100 break-words text-center">
                     <div class="w-24 h-24 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-md">
                         <i class="fas fa-user-circle text-4xl text-slate-300"></i>
@@ -380,7 +346,6 @@
 
     </div>
 
-    <!-- Mobile Bottom Navigation (Safe Area support) -->
     <div class="md:hidden bg-slate-900 border-t border-slate-800 flex shrink-0 z-50 fixed bottom-0 w-full shadow-[0_-10px_20px_rgba(0,0,0,0.3)] safe-pb">
         <button id="tab-editor" class="flex-1 py-4 text-center text-amber-400 font-black border-t-4 border-amber-400 transition-colors bg-slate-800/50">
             <i class="fas fa-sliders-h block mb-1 text-xl"></i> <span class="text-[11px] uppercase tracking-widest" data-i18n="tab_tools">Strumenti Pro</span>
@@ -391,8 +356,7 @@
     </div>
 
     <script>
-        // --- 1. CORE & SICUREZZA (API KEY MANAGER) ---
-        const CONST_API_KEY = ""; // Fallback ambiente canvas
+        const CONST_API_KEY = ""; 
 
         const apiModal = document.getElementById('api-key-modal');
         const inputApiKey = document.getElementById('input-api-key');
@@ -431,13 +395,10 @@
             apiModal.classList.remove('flex'); apiModal.classList.add('hidden');
         });
 
-        // --- 2. GESTIONE DI STATO ROBUSTA (AUTOSAVE) ---
-        // Lo stato racchiude TUTTO il contenuto del libro. Salvandolo, resistiamo ai refresh della pagina.
         const defaultState = { topic: "", language: "Italiano", trim: "6x9", pages: 150, penName: "", research: "", chapters: [], artStyle: "", character: "", targetVisuals: "", coverUrl: "", bioHtml: "", leadHtml: "", seoData: null, videoHtml: "" };
         let state = { ...defaultState };
 
         function saveProject() {
-            // Sincronizza i valori degli input visivi prima di salvare
             state.topic = document.getElementById('input-topic').value;
             state.language = document.getElementById('select-language').value;
             state.trim = document.getElementById('select-trim').value;
@@ -453,7 +414,6 @@
             if (saved) {
                 try {
                     state = { ...defaultState, ...JSON.parse(saved) };
-                    // Ripristina UI Inputs
                     document.getElementById('input-topic').value = state.topic;
                     document.getElementById('select-language').value = state.language;
                     document.getElementById('select-trim').value = state.trim;
@@ -463,12 +423,9 @@
                     
                     updatePreviewTitle();
 
-                    // Ripristina rendering se i dati esistono
                     if(state.research) {
-                        // Un trucco per parsare solo se è un json valido di ricerca (lo capiamo dalla struttura)
                         try {
                             const nicheData = JSON.parse(state.research);
-                            // La ricostruzione visiva dell'HTML della ricerca qui è saltata per brevità al reload, ma i dati ci sono.
                             document.getElementById('research-page').classList.remove('hidden');
                             document.getElementById('research-content').innerHTML = `<i>Analisi ricaricata dal salvataggio locale. Procedi con gli altri step.</i>`;
                         }catch(e){}
@@ -508,18 +465,15 @@
             }
         }
 
-        // Funzione Reset Progetto Completo
         document.getElementById('btn-reset-project').addEventListener('click', () => {
             if(confirm("Attenzione: Vuoi cancellare tutto il libro e ricominciare da zero? Questa azione non può essere annullata.")) {
                 localStorage.removeItem('kdp_project_state');
-                location.reload(); // Il ricaricamento pulisce la memoria e riparte da zero.
+                location.reload(); 
             }
         });
 
-        // Esegui autosave quando cambia un input di base
         document.querySelectorAll('input, select, textarea').forEach(el => el.addEventListener('change', saveProject));
 
-        // --- 3. LINGUE UI (Dizionario) ---
         const i18n = {
             it: { btn_export: "Esporta (PDF)", btn_reset: "Nuovo", pdf_loading_title: "Impaginazione in corso...", pdf_loading_desc: "L'applicazione dei margini di stampa richiede calcolo intensivo. Attendi...",
                 s1_title: "Setup Progetto", s1_topic: "Argomento Principale", s1_topic_ph: "es. Day Trading Options", s1_market: "Mercato KDP (Lingua Output)", s1_trim: "Gabbia Stampa", s1_pages: "Target Pagine",
@@ -551,7 +505,6 @@
                 js_msg_copy: "HTML Code copied to clipboard!", js_msg_err: "Error during operation.", js_sub_btn: "Generate", js_txt_btn: "Write Text", js_img_btn: "Image",
                 js_msg_req_key: "Please insert your API Key (Gear icon) to continue.", js_msg_key_saved: "API Key Saved!"
             }
-            // Mantenute versioni essenziali per non sovraccaricare il prompt, logica invariata.
         };
         let currentUiLang = 'it';
         function t(key) { return (i18n[currentUiLang] && i18n[currentUiLang][key]) || i18n['it'][key] || key; }
@@ -563,7 +516,6 @@
         }
         document.getElementById('ui-lang-selector').addEventListener('change', (e) => updateUILanguage(e.target.value));
 
-        // --- UTILS ---
         function showMessage(msg, isError = false) {
             const el = document.getElementById('status-message');
             el.innerHTML = isError ? `<i class="fas fa-exclamation-triangle text-2xl text-red-500"></i> <span class="font-medium">${msg}</span>` : `<i class="fas fa-check-circle text-2xl text-emerald-500"></i> <span class="font-medium">${msg}</span>`;
@@ -588,21 +540,20 @@
             document.body.removeChild(textArea);
         };
 
-        // --- 4. API CALLS CON ERROR HANDLING AVANZATO ---
         async function apiFetchWrapper(url, payload, retryCount = 0) {
             try {
                 const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 if (!response.ok) {
-                    if(response.status === 400 || response.status === 403) throw new Error("AUTH_FAIL"); // Chiave errata o quota superata
+                    if(response.status === 400 || response.status === 403) throw new Error("AUTH_FAIL");
                     throw new Error(`Server Error: ${response.status}`);
                 }
                 return await response.json();
             } catch (error) {
                 if (error.message === "AUTH_FAIL") {
-                    localStorage.removeItem('kdp_gemini_key'); // Elimina la chiave non funzionante
+                    localStorage.removeItem('kdp_gemini_key'); 
                     requireApiKey("La chiave API è errata o il limite (Quota) è stato superato. Verifica su Google AI Studio.");
                 }
-                if (retryCount < 3 && error.message !== "AUTH_FAIL") { // Max 3 retry per velocizzare l'app su errore
+                if (retryCount < 3 && error.message !== "AUTH_FAIL") { 
                     await new Promise(r => setTimeout(r, Math.pow(2, retryCount) * 1000));
                     return apiFetchWrapper(url, payload, retryCount + 1);
                 }
@@ -646,10 +597,6 @@
             return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
         }
 
-
-        // --- LOGICHE OPERATIVE (I 6 STEP) ---
-        
-        // STEP 2: RICERCA
         document.getElementById('btn-research').addEventListener('click', async () => {
             state.topic = document.getElementById('input-topic').value; state.language = document.getElementById('select-language').value;
             if(!state.topic) return showMessage("Compila prima lo Step 1!", true);
@@ -664,7 +611,6 @@
                 const data = await fetchGeminiResearchJSON(prompt);
                 state.research = JSON.stringify(data.niche_analysis); saveProject();
                 
-                // Formattazione via Prose (Typography Tailwind)
                 document.getElementById('research-content').innerHTML = `
                     <h3>Competitor: ${data.best_seller.title}</h3>
                     <p><b>Di:</b> ${data.best_seller.author} | <a href="${data.best_seller.amazon_link}" target="_blank">Vedi su Amazon</a></p>
@@ -684,7 +630,6 @@
             } catch (e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
         });
 
-        // STEP 3: MARKETING
         document.getElementById('btn-marketing').addEventListener('click', async () => {
             state.topic = document.getElementById('input-topic').value; state.language = document.getElementById('select-language').value;
             const btn = document.getElementById('btn-marketing'); const loader = document.getElementById('loader-marketing');
@@ -702,7 +647,6 @@
             } catch (e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
         });
 
-        // STEP 4: TOC
         document.getElementById('btn-toc').addEventListener('click', async () => {
             const btn = document.getElementById('btn-toc'); const loader = document.getElementById('loader-toc');
             btn.disabled = true; loader.classList.remove('hidden');
@@ -756,7 +700,6 @@
             const prompt = `Scrivi contenuto "${sub.title}" (Cap: "${state.chapters[c].title}"). Lingua: ${state.language}. Tono: "${style}".\nANGLE: ${state.research}\nUsa Markdown. Scrivi 400 parole.`;
             try {
                 let text = await fetchGeminiData(prompt);
-                // Convertiamo il markdown in HTML per l'esportazione finale e lo inseriamo nel sub.content
                 sub.content = marked.parse(text); saveProject();
                 renderChaptersManager(); renderManuscript();
             } catch (e) { showMessage(e.message, true); }
@@ -775,7 +718,6 @@
             } catch (e) { showMessage(e.message, true); }
         };
 
-        // STEP 5: REVISIONE
         document.getElementById('btn-format-all').addEventListener('click', async () => {
             const style = document.getElementById('select-style').value;
             const btn = document.getElementById('btn-format-all'); const loader = document.getElementById('loader-format');
@@ -785,7 +727,6 @@
                     if(!c.subchapters) continue;
                     for (let s of c.subchapters) {
                         if (s.content) {
-                            // Diciamo all'IA che il testo in ingresso è HTML e deve restituire Markdown migliorato
                             const prompt = `Riscrivi migliorando Tono: "${style}". Lingua: ${state.language}. Testo base:\n${s.content}\nRestituisci testo in Markdown puro.`;
                             let md = await fetchGeminiData(prompt);
                             s.content = marked.parse(md); renderManuscript(); saveProject();
@@ -795,7 +736,6 @@
             } catch(e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
         });
 
-        // STEP 6: KDP BACKEND
         document.getElementById('btn-cover').addEventListener('click', async () => {
             state.trim = document.getElementById('select-trim').value;
             state.artStyle = document.getElementById('input-art-style').value; state.character = document.getElementById('input-character').value;
@@ -843,121 +783,4 @@
                 let md = await fetchGeminiData(prompt);
                 state.videoHtml = marked.parse(md); saveProject();
                 
-                document.getElementById('kdp-backend-page').classList.remove('hidden'); document.getElementById('video-ad-section').classList.remove('hidden');
-                document.getElementById('ui-spec-lang').textContent = state.language; document.getElementById('video-script-content').innerHTML = state.videoHtml;
-                if(window.innerWidth < 768) { switchTab('preview'); setTimeout(() => document.getElementById('video-ad-section').scrollIntoView({ behavior: 'smooth' }), 300); }
-            } catch (e) { showMessage(e.message, true); } finally { btn.disabled = false; loader.classList.add('hidden'); }
-        });
-
-        // --- MOBILE UI GESTIONE TABS ---
-        function switchTab(tab) {
-            if(window.innerWidth >= 768) return; 
-            const e = document.getElementById('panel-editor'), p = document.getElementById('panel-preview'), te = document.getElementById('tab-editor'), tp = document.getElementById('tab-preview');
-            if(tab === 'editor') {
-                e.classList.remove('hidden'); e.classList.add('flex'); p.classList.add('hidden'); p.classList.remove('flex');
-                te.classList.replace('text-slate-400', 'text-amber-400'); te.classList.replace('border-transparent', 'border-amber-400'); te.classList.add('bg-slate-800/50');
-                tp.classList.replace('text-amber-400', 'text-slate-400'); tp.classList.replace('border-amber-400', 'border-transparent'); tp.classList.remove('bg-slate-800/50');
-            } else {
-                e.classList.add('hidden'); e.classList.remove('flex'); p.classList.remove('hidden'); p.classList.add('flex');
-                tp.classList.replace('text-slate-400', 'text-amber-400'); tp.classList.replace('border-transparent', 'border-amber-400'); tp.classList.add('bg-slate-800/50');
-                te.classList.replace('text-amber-400', 'text-slate-400'); te.classList.replace('border-amber-400', 'border-transparent'); te.classList.remove('bg-slate-800/50');
-            }
-        }
-        document.getElementById('tab-editor').addEventListener('click', () => switchTab('editor'));
-        document.getElementById('tab-preview').addEventListener('click', () => switchTab('preview'));
-        window.addEventListener('resize', () => {
-            if (window.innerWidth >= 768) {
-                document.getElementById('panel-editor').classList.remove('hidden'); document.getElementById('panel-editor').classList.add('flex');
-                document.getElementById('panel-preview').classList.remove('hidden'); document.getElementById('panel-preview').classList.add('flex');
-            } else { switchTab(document.getElementById('tab-editor').classList.contains('text-amber-400') ? 'editor' : 'preview'); }
-        });
-
-        // --- PDF EXPORT AVANZATO ---
-        document.getElementById('btn-export-pdf').addEventListener('click', () => {
-            const topic = state.topic || 'KDP_Manoscritto';
-            const beElements = document.querySelectorAll('.kdp-backend-only'); 
-            beElements.forEach(el => el.style.display = 'none');
-            
-            const exportArea = document.getElementById('book-export-area');
-            exportArea.classList.add('pdf-export-mode'); 
-
-            const wasHidden = document.getElementById('panel-preview').classList.contains('hidden');
-            if (wasHidden) { document.getElementById('panel-preview').classList.remove('hidden'); document.getElementById('panel-preview').classList.add('flex'); }
-            
-            const loaderOverlay = document.getElementById('fullscreen-loader');
-            loaderOverlay.classList.remove('hidden'); loaderOverlay.classList.add('flex');
-            
-            const trimSelection = document.getElementById('select-trim').value;
-            let pdfFormat = 'a4'; 
-            if (trimSelection === '6x9') pdfFormat = [152.4, 228.6];
-            if (trimSelection === '5.5x8.5') pdfFormat = [139.7, 215.9];
-            if (trimSelection === '8.5x11') pdfFormat = [215.9, 279.4];
-
-            setTimeout(() => {
-                const opt = { 
-                    margin: 0, 
-                    filename: topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()+'.pdf', 
-                    image: { type: 'jpeg', quality: 0.95 }, 
-                    html2canvas: { scale: 2, useCORS: true, windowWidth: 800, logging: false }, 
-                    jsPDF: { unit: 'mm', format: pdfFormat, orientation: 'portrait' } 
-                };
-
-                html2pdf().set(opt).from(exportArea).toPdf().get('pdf').then(function (pdf) {
-                    const totalPages = pdf.internal.getNumberOfPages();
-                    for (let i = 1; i <= totalPages; i++) {
-                        pdf.setPage(i); pdf.setFontSize(10); pdf.setTextColor(120, 120, 120); 
-                        pdf.text(String(i), pdf.internal.pageSize.getWidth() / 2, pdf.internal.pageSize.getHeight() - 12, { align: 'center' });
-                    }
-                }).save().then(() => {
-                    beElements.forEach(el => el.style.display = ''); exportArea.classList.remove('pdf-export-mode'); 
-                    if (wasHidden) { document.getElementById('panel-preview').classList.add('hidden'); document.getElementById('panel-preview').classList.remove('flex'); }
-                    loaderOverlay.classList.remove('flex'); loaderOverlay.classList.add('hidden'); showMessage("PDF Scaricato con successo!"); 
-                }).catch(e => {
-                    beElements.forEach(el => el.style.display = ''); exportArea.classList.remove('pdf-export-mode'); 
-                    if (wasHidden) { document.getElementById('panel-preview').classList.add('hidden'); document.getElementById('panel-preview').classList.remove('flex'); }
-                    loaderOverlay.classList.remove('flex'); loaderOverlay.classList.add('hidden'); showMessage("Errore PDF: Riprova.", true);
-                });
-            }, 400); // 400ms per assicurare il render DOM su mobile
-        });
-
-        function renderTOCPreview() {
-            const tocContent = document.getElementById('toc-content');
-            document.getElementById('toc-page').classList.remove('hidden');
-            let html = '<ul class="list-none p-0 m-0">';
-            state.chapters.forEach((chap, cIndex) => {
-                html += `<li class="font-bold mt-5 border-b border-slate-200 pb-2">${cIndex + 1}. ${chap.title}</li>`;
-                if(chap.subchapters && chap.subchapters.length > 0) {
-                    html += '<ul class="pl-4 sm:pl-8 mt-3 space-y-2">';
-                    chap.subchapters.forEach((sub, sIndex) => { html += `<li class="text-slate-600 text-base sm:text-lg">${cIndex + 1}.${sIndex + 1}. ${sub.title}</li>`; });
-                    html += '</ul>';
-                }
-            });
-            tocContent.innerHTML = html + '</ul>';
-        }
-
-        function renderManuscript() {
-            const manuscript = document.getElementById('manuscript-content'); manuscript.innerHTML = '';
-            state.chapters.forEach((chap, cIndex) => {
-                const chapDiv = document.createElement('div'); chapDiv.className = 'page-break pt-8';
-                chapDiv.innerHTML = `<h1 class="text-3xl sm:text-5xl mt-6 font-black text-slate-800">Capitolo ${cIndex + 1} <br> <span class="text-xl sm:text-3xl text-slate-500 font-medium tracking-wide mt-2 block">${chap.title}</span></h1>`;
-                if(chap.subchapters) {
-                    chap.subchapters.forEach((sub, sIndex) => {
-                        const subDiv = document.createElement('div'); subDiv.innerHTML = `<h2 class="text-2xl sm:text-3xl mt-12 mb-6 font-bold text-slate-800 border-b-2 border-slate-100 pb-3">${cIndex + 1}.${sIndex + 1} ${sub.title}</h2>`;
-                        if(sub.image) subDiv.innerHTML += `<img src="${sub.image}" class="my-6 rounded-xl shadow-lg border border-slate-100 w-full max-w-2xl mx-auto">`;
-                        if(sub.content) subDiv.innerHTML += `<div class="prose prose-slate prose-lg max-w-none text-justify mx-auto">${sub.content}</div>`;
-                        else subDiv.innerHTML += `<p class="italic text-slate-400 text-sm my-4 bg-slate-50 p-4 rounded text-center">[Contenuto da generare]</p>`;
-                        chapDiv.appendChild(subDiv);
-                    });
-                } manuscript.appendChild(chapDiv);
-            });
-        }
-
-        // --- INIZIALIZZAZIONE ---
-        window.onload = () => {
-            updateUILanguage('it');
-            loadProject(); // Carica dati precedenti se esistono
-        };
-
-    </script>
-</body>
-</html>
+                document.getElementById('kdp-backend-
