@@ -72,9 +72,32 @@
         /* Toast animato */
         #status-message.show { transform: translateY(0); opacity: 1; }
         #status-message { transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Magic Overlay */
+        @keyframes pulse-magic {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+        .magic-pulse { animation: pulse-magic 2s infinite ease-in-out; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col font-sans antialiased text-slate-800">
+
+    <!-- Magic Loader Overlay -->
+    <div id="magic-loader" class="fixed inset-0 bg-slate-900/80 z-[150] hidden flex-col items-center justify-center backdrop-blur-sm transition-all duration-300">
+        <div class="relative">
+            <div class="w-24 h-24 bg-indigo-600/20 rounded-full flex items-center justify-center magic-pulse">
+                <i class="fas fa-wand-magic-sparkles text-5xl text-indigo-400"></i>
+            </div>
+            <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center animate-bounce">
+                <i class="fas fa-star text-[10px] text-amber-900"></i>
+            </div>
+        </div>
+        <p class="text-xl font-black text-white mt-8 tracking-widest uppercase text-center px-6">
+            Sto facendo la magia...
+        </p>
+        <p class="text-indigo-300 text-xs mt-2 font-bold opacity-70 italic">L'IA sta creando i tuoi contenuti</p>
+    </div>
 
     <!-- API Key Modal -->
     <div id="api-key-modal" class="fixed inset-0 bg-slate-900/90 z-[110] hidden items-center justify-center p-4 backdrop-blur-sm">
@@ -92,7 +115,7 @@
         </div>
     </div>
 
-    <!-- Fullscreen Loader -->
+    <!-- Fullscreen Loader (per Export PDF) -->
     <div id="fullscreen-loader" class="fixed inset-0 bg-white/95 z-[100] hidden flex-col items-center justify-center backdrop-blur-md">
         <div class="loader border-indigo-600 border-t-transparent w-12 h-12 mb-4 border-4"></div>
         <p class="text-lg font-black text-slate-900" data-i18n="pdf_loading_title">Creazione Manoscritto...</p>
@@ -365,11 +388,24 @@
             return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
         }
 
+        // --- MAGIC LOADER CONTROL ---
+        function toggleMagic(show) {
+            const loader = document.getElementById('magic-loader');
+            if (show) {
+                loader.classList.remove('hidden');
+                loader.classList.add('flex');
+            } else {
+                loader.classList.add('hidden');
+                loader.classList.remove('flex');
+            }
+        }
+
         // --- ACTIONS ---
         document.getElementById('btn-research').addEventListener('click', async () => {
             const topic = document.getElementById('input-topic').value;
             if (!topic) return showToast("Inserisci un titolo!", true);
             toggleLoader('research', true);
+            toggleMagic(true);
             try {
                 const prompt = `Analisi mercato Amazon per un libro su: "${topic}" in ${state.language}. Trova gap e target. JSON: {"audience": "...", "angle": "...", "keywords": ["..."]}`;
                 const res = await fetchGemini(prompt, true);
@@ -378,12 +414,14 @@
                 saveState();
             } catch (e) { showToast(e.message, true); }
             toggleLoader('research', false);
+            toggleMagic(false);
         });
 
         document.getElementById('btn-toc').addEventListener('click', async () => {
             const topic = document.getElementById('input-topic').value;
             if (!topic) return showToast("Inserisci un titolo!", true);
             toggleLoader('toc', true);
+            toggleMagic(true);
             try {
                 const prompt = `Crea un indice KDP di 5 capitoli per "${topic}" in ${state.language}. Solo nomi capitoli in array JSON: ["Cap 1", "Cap 2", ...]`;
                 const list = await fetchGemini(prompt, true);
@@ -395,10 +433,12 @@
                 showToast("Indice generato!");
             } catch (e) { showToast(e.message, true); }
             toggleLoader('toc', false);
+            toggleMagic(false);
         });
 
         window.writeChapter = async (idx) => {
             showToast(`Generazione capitolo ${idx+1}...`);
+            toggleMagic(true);
             try {
                 const prompt = `Scrivi il capitolo "${state.chapters[idx].title}" per il libro "${document.getElementById('input-topic').value}". Lingua: ${state.language}. Usa markdown professionale. 800 parole.`;
                 const text = await fetchGemini(prompt);
@@ -407,6 +447,7 @@
                 saveState();
                 showToast("Capitolo pronto!");
             } catch (e) { showToast(e.message, true); }
+            toggleMagic(false);
         };
 
         // --- RENDERING ---
@@ -446,6 +487,7 @@
         // --- MARKETING ---
         document.getElementById('btn-cover').addEventListener('click', async () => {
             toggleLoader('cover', true);
+            toggleMagic(true);
             try {
                 const p = `High quality book cover for "${document.getElementById('input-topic').value}", professional design, minimal, no text.`;
                 const url = await fetchImagen(p);
@@ -461,10 +503,12 @@
                 showToast("Copertina pronta!");
             } catch (e) { showToast(e.message, true); }
             toggleLoader('cover', false);
+            toggleMagic(false);
         });
 
         document.getElementById('btn-seo').addEventListener('click', async () => {
             toggleLoader('seo', true);
+            toggleMagic(true);
             try {
                 const prompt = `Genera Metadata KDP per: "${document.getElementById('input-topic').value}". JSON: {"title": "...", "subtitle": "...", "keywords": ["..."], "desc": "HTML formatted AIDA description"}`;
                 const res = await fetchGemini(prompt, true);
@@ -478,6 +522,7 @@
                 showToast("SEO completato!");
             } catch (e) { showToast(e.message, true); }
             toggleLoader('seo', false);
+            toggleMagic(false);
         });
 
         // --- UTILS ---
