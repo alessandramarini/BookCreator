@@ -31,7 +31,7 @@
         .scrollable-panel { 
             -webkit-overflow-scrolling: touch; 
             scroll-behavior: smooth;
-            padding-bottom: 120px; /* Spazio per la nav mobile */
+            padding-bottom: 120px;
         }
 
         /* Scaling dinamico dell'anteprima su mobile */
@@ -39,7 +39,7 @@
             #book-export-area {
                 transform: scale(0.45);
                 transform-origin: top center;
-                margin-bottom: -500px; /* Compensa lo spazio vuoto dopo lo scale */
+                margin-bottom: -500px;
             }
             .preview-container {
                 display: flex;
@@ -51,7 +51,6 @@
 
         .page-break { page-break-after: always; break-after: page; }
         
-        /* Loader personalizzato */
         .loader { 
             border: 2px solid #f3f3f3; 
             border-radius: 50%; 
@@ -63,17 +62,14 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Stile Libro */
         .book-content { font-family: 'Georgia', serif; }
         .book-content h1 { font-size: 2.5rem; font-weight: 900; line-height: 1.2; text-align: center; }
         .book-content h2 { font-size: 1.8rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #1e293b; }
         .book-content p { font-size: 1.1rem; line-height: 1.7; text-align: justify; margin-bottom: 1.2rem; }
 
-        /* Toast animato */
         #status-message.show { transform: translateY(0); opacity: 1; }
         #status-message { transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* Magic Overlay */
         @keyframes pulse-magic {
             0%, 100% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.1); opacity: 0.7; }
@@ -115,7 +111,7 @@
         </div>
     </div>
 
-    <!-- Fullscreen Loader (per Export PDF) -->
+    <!-- Fullscreen Loader -->
     <div id="fullscreen-loader" class="fixed inset-0 bg-white/95 z-[100] hidden flex-col items-center justify-center backdrop-blur-md">
         <div class="loader border-indigo-600 border-t-transparent w-12 h-12 mb-4 border-4"></div>
         <p class="text-lg font-black text-slate-900" data-i18n="pdf_loading_title">Creazione Manoscritto...</p>
@@ -147,11 +143,10 @@
 
     <main class="flex flex-1 overflow-hidden relative">
         
-        <!-- Panel Editor (Tools) -->
+        <!-- Panel Editor -->
         <div id="panel-editor" class="w-full md:w-[400px] bg-white overflow-y-auto scrollable-panel flex flex-col z-10">
             <div class="p-5 space-y-6">
                 
-                <!-- STEP 1: SETUP -->
                 <div class="space-y-4">
                     <div class="flex items-center gap-3 mb-2">
                         <span class="w-6 h-6 bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center">01</span>
@@ -183,7 +178,6 @@
                     </div>
                 </div>
 
-                <!-- STEP 2: RICERCA -->
                 <div class="space-y-4">
                     <div class="flex items-center gap-3 mb-2">
                         <span class="w-6 h-6 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">02</span>
@@ -201,7 +195,6 @@
                     </button>
                 </div>
 
-                <!-- STEP 3: MANOSCRITTO -->
                 <div class="space-y-4">
                     <div class="flex items-center gap-3 mb-2">
                         <span class="w-6 h-6 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">03</span>
@@ -221,7 +214,6 @@
                     </div>
                 </div>
 
-                <!-- STEP 4: MARKETING -->
                 <div class="space-y-4">
                     <div class="flex items-center gap-3 mb-2">
                         <span class="w-6 h-6 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">04</span>
@@ -241,17 +233,13 @@
                     </div>
                 </div>
 
-                <!-- RESET -->
                 <button id="btn-reset-project" class="w-full py-4 text-xs font-bold text-slate-400 bg-slate-100 rounded-2xl" data-i18n="btn_reset">Nuovo Progetto</button>
-
             </div>
         </div>
 
         <!-- Panel Preview -->
         <div id="panel-preview" class="flex-1 bg-slate-100 p-4 md:p-10 overflow-y-auto scrollable-panel hidden md:flex justify-center preview-container">
             <div id="book-export-area" class="bg-white w-[850px] min-h-[1100px] shadow-2xl p-16 book-content relative shrink-0">
-                
-                <!-- SEO DASHBOARD -->
                 <div id="kdp-backend-page" class="kdp-backend-only hidden bg-slate-50 p-8 rounded-3xl border border-slate-200 mb-10">
                     <h2 class="text-slate-900 font-black mb-6 flex items-center"><i class="fab fa-amazon mr-2 text-indigo-600"></i> <span data-i18n="kdp_title">Dashboard KDP</span></h2>
                     <div class="space-y-6 text-sm">
@@ -262,7 +250,6 @@
                     </div>
                 </div>
 
-                <!-- COVER PAGE -->
                 <div id="cover-page" class="page-break flex flex-col items-center justify-center min-h-[900px] relative overflow-hidden bg-slate-50 rounded-lg border border-slate-100">
                     <div id="cover-placeholder" class="text-center z-10 p-10">
                         <i class="fas fa-book-open text-8xl text-slate-200 mb-8"></i>
@@ -271,13 +258,11 @@
                     </div>
                 </div>
 
-                <!-- TOC PAGE -->
                 <div id="toc-page" class="page-break hidden pt-20">
                     <h1 class="text-4xl font-black text-slate-900 mb-12" data-i18n="toc_title">Indice</h1>
                     <div id="toc-content" class="text-xl space-y-4"></div>
                 </div>
 
-                <!-- MANUSCRIPT -->
                 <div id="manuscript-content" class="mt-20">
                     <div id="empty-manuscript-msg" class="text-center py-40 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
                         <i class="fas fa-pencil-alt text-4xl text-slate-200 mb-4"></i>
@@ -288,24 +273,25 @@
         </div>
     </main>
 
-    <!-- Mobile Navigation Bar -->
+    <!-- Mobile Navigation -->
     <div class="md:hidden bg-white border-t border-slate-200 grid grid-cols-3 shrink-0 fixed bottom-0 w-full z-50 safe-area-bottom px-2 pt-2 pb-6">
-        <button id="tab-editor" class="flex flex-col items-center justify-center py-2 text-indigo-600 transition-all">
+        <button id="tab-editor" class="flex flex-col items-center justify-center py-2 text-indigo-600">
             <i class="fas fa-magic text-xl mb-1"></i>
             <span class="text-[9px] font-black uppercase tracking-tighter" data-i18n="tab_tools">Strumenti</span>
         </button>
-        <button id="tab-preview" class="flex flex-col items-center justify-center py-2 text-slate-400 transition-all">
+        <button id="tab-preview" class="flex flex-col items-center justify-center py-2 text-slate-400">
             <i class="fas fa-book-open text-xl mb-1"></i>
             <span class="text-[9px] font-black uppercase tracking-tighter" data-i18n="tab_preview">Anteprima</span>
         </button>
-        <button id="mobile-export-pdf" class="flex flex-col items-center justify-center py-2 text-slate-400 transition-all">
+        <button id="mobile-export-pdf" class="flex flex-col items-center justify-center py-2 text-slate-400">
             <i class="fas fa-file-pdf text-xl mb-1"></i>
             <span class="text-[9px] font-black uppercase tracking-tighter" data-i18n="btn_export">Salva</span>
         </button>
     </div>
 
     <script>
-        // --- DIZIONARIO i18n ---
+        const apiKey = ""; // Gestito automaticamente o tramite settings
+
         const i18n = {
             it: {
                 btn_export: "Salva PDF", btn_reset: "Reset Progetto", pdf_loading_title: "Ottimizzazione...", pdf_loading_desc: "Creazione layout professionale...",
@@ -328,16 +314,6 @@
                 prev_cov_title: "Your Book", prev_cov_auth: "Author", toc_title: "Contents",
                 empty_p1: "Start writing...", tab_tools: "Tools", tab_preview: "Preview",
                 js_msg_copy: "Copied!", js_msg_err: "Error!", js_txt_btn: "Write", js_img_btn: "Image"
-            },
-            es: {
-                btn_export: "Guardar PDF", btn_reset: "Reiniciar", s1_title: "Proyecto", s1_topic: "Tema", btn_research: "Analizar", 
-                s4_title: "Manuscrito", btn_toc: "Generar Índice", btn_cover: "Portada AI", btn_seo: "SEO KDP",
-                prev_cov_title: "Tu Libro", toc_title: "Índice", tab_tools: "Herramientas", tab_preview: "Vista Previa"
-            },
-            fr: {
-                btn_export: "Enregistrer PDF", btn_reset: "Réinitialiser", s1_title: "Projet", s1_topic: "Sujet", btn_research: "Analyser", 
-                s4_title: "Manuscrit", btn_toc: "Générer Sommaire", btn_cover: "Couverture AI", btn_seo: "SEO KDP",
-                prev_cov_title: "Votre Livre", toc_title: "Sommaire", tab_tools: "Outils", tab_preview: "Aperçu"
             }
         };
 
@@ -347,7 +323,6 @@
             coverUrl: "", seoData: null, uiLang: "it"
         };
 
-        // --- CORE FUNCTIONS ---
         function updateUILanguage(lang) {
             state.uiLang = i18n[lang] ? lang : 'it';
             document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -363,54 +338,77 @@
 
         async function apiFetch(url, payload, retry = 0) {
             try {
-                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const response = await fetch(url, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
+                
                 if (!response.ok) {
                     const errData = await response.json().catch(() => ({}));
-                    console.error("API Error Detail:", errData);
-                    throw new Error(response.status === 401 || response.status === 403 ? "AUTH" : `API Error: ${response.status}`);
+                    console.error("API Error Status:", response.status, errData);
+                    if (response.status === 401 || response.status === 403) throw new Error("AUTH");
+                    if (response.status === 404) throw new Error("MODEL_NOT_FOUND");
+                    throw new Error(`API Error: ${response.status}`);
                 }
                 return await response.json();
             } catch (e) {
-                if (e.message === "AUTH") { localStorage.removeItem('kdp_gemini_key'); openApiModal("Chiave API non valida."); throw e; }
-                if (retry < 5) { 
+                if (e.message === "AUTH") {
+                    localStorage.removeItem('kdp_gemini_key');
+                    openApiModal("Chiave API non valida o permessi insufficienti.");
+                    throw e;
+                }
+                if (retry < 5) {
                     const delay = Math.pow(2, retry) * 1000;
-                    await new Promise(r => setTimeout(r, delay)); 
-                    return apiFetch(url, payload, retry + 1); 
+                    await new Promise(r => setTimeout(r, delay));
+                    return apiFetch(url, payload, retry + 1);
                 }
                 throw e;
             }
         }
 
-        function getActiveKey() { return localStorage.getItem('kdp_gemini_key') || ""; }
+        function getActiveKey() {
+            return localStorage.getItem('kdp_gemini_key') || apiKey;
+        }
 
         async function fetchGemini(prompt, isJson = false) {
             const key = getActiveKey();
             if (!key) { openApiModal(); throw new Error("Key missing"); }
+            
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
+            
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: isJson ? "Rispondi SOLO con JSON valido. Niente markdown, niente commenti." : "Sei un autore KDP esperto." }] }
+                systemInstruction: { parts: [{ text: isJson ? "Rispondi esclusivamente in formato JSON valido, senza blocchi markdown o testo aggiuntivo." : "Sei un autore KDP professionista. Usa il markdown." }] }
             };
-            if (isJson) payload.generationConfig = { responseMimeType: "application/json" };
-            const data = await apiFetch(url, payload);
-            let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+            if (isJson) {
+                payload.generationConfig = { responseMimeType: "application/json" };
+            }
+
+            const result = await apiFetch(url, payload);
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error("Risposta vuota dall'AI");
             return isJson ? JSON.parse(text) : text;
         }
 
         async function fetchImagen(promptText) {
             const key = getActiveKey();
             if (!key) { openApiModal(); throw new Error("Key missing"); }
+            
             const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${key}`;
+            
             const payload = { 
                 instances: { prompt: promptText }, 
                 parameters: { sampleCount: 1 } 
             };
-            const data = await apiFetch(url, payload);
-            if (!data.predictions?.[0]?.bytesBase64Encoded) throw new Error("Image generation failed");
-            return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+            
+            const result = await apiFetch(url, payload);
+            const base64 = result.predictions?.[0]?.bytesBase64Encoded;
+            if (!base64) throw new Error("Generazione immagine fallita.");
+            return `data:image/png;base64,${base64}`;
         }
 
-        // --- MAGIC LOADER CONTROL ---
         function toggleMagic(show) {
             const loader = document.getElementById('magic-loader');
             if (show) {
@@ -422,11 +420,9 @@
             }
         }
 
-        // --- ACTIONS ---
         document.getElementById('btn-research').addEventListener('click', async () => {
             const topic = document.getElementById('input-topic').value;
             if (!topic) return showToast("Inserisci un titolo!", true);
-            toggleLoader('research', true);
             toggleMagic(true);
             try {
                 const prompt = `Analisi mercato Amazon per un libro su: "${topic}" in ${state.language}. Trova gap e target. JSON: {"audience": "...", "angle": "...", "keywords": ["..."]}`;
@@ -434,15 +430,15 @@
                 state.research = JSON.stringify(res);
                 showToast("Analisi completata!");
                 saveState();
-            } catch (e) { showToast(e.message, true); }
-            toggleLoader('research', false);
+            } catch (e) { 
+                showToast(e.message === "MODEL_NOT_FOUND" ? "Modello non trovato. Verifica la chiave." : e.message, true); 
+            }
             toggleMagic(false);
         });
 
         document.getElementById('btn-toc').addEventListener('click', async () => {
             const topic = document.getElementById('input-topic').value;
             if (!topic) return showToast("Inserisci un titolo!", true);
-            toggleLoader('toc', true);
             toggleMagic(true);
             try {
                 const prompt = `Crea un indice KDP di 5 capitoli per "${topic}" in ${state.language}. Solo nomi capitoli in array JSON: ["Cap 1", "Cap 2", ...]`;
@@ -454,12 +450,10 @@
                 saveState();
                 showToast("Indice generato!");
             } catch (e) { showToast(e.message, true); }
-            toggleLoader('toc', false);
             toggleMagic(false);
         });
 
         window.writeChapter = async (idx) => {
-            showToast(`Generazione capitolo ${idx+1}...`);
             toggleMagic(true);
             try {
                 const prompt = `Scrivi il capitolo "${state.chapters[idx].title}" per il libro "${document.getElementById('input-topic').value}". Lingua: ${state.language}. Usa markdown professionale. 800 parole.`;
@@ -472,7 +466,6 @@
             toggleMagic(false);
         };
 
-        // --- RENDERING ---
         function renderChaptersManager() {
             const list = document.getElementById('chapters-list');
             list.innerHTML = "";
@@ -493,7 +486,7 @@
 
         function renderTOC() {
             document.getElementById('toc-page').classList.remove('hidden');
-            document.getElementById('toc-content').innerHTML = state.chapters.map((c, i) => `<div class="flex justify-between border-b border-slate-100 pb-2"><span>${i+1}. ${c.title}</span><span class="text-slate-300">......</span></div>`).join("");
+            document.getElementById('toc-content').innerHTML = state.chapters.map((c, i) => `<div class="flex justify-between border-b border-slate-100 pb-2"><span>${i+1}. ${c.title}</span></div>`).join("");
         }
 
         function renderManuscript() {
@@ -506,34 +499,30 @@
             `).join("");
         }
 
-        // --- MARKETING ---
         document.getElementById('btn-cover').addEventListener('click', async () => {
             const topic = document.getElementById('input-topic').value;
             if (!topic) return showToast("Inserisci un titolo!", true);
-            toggleLoader('cover', true);
             toggleMagic(true);
             try {
-                const p = `High quality book cover for "${topic}", professional design, minimal, no text.`;
+                const p = `High quality professional book cover illustration for "${topic}", minimalist design, no text, cinematic lighting.`;
                 const url = await fetchImagen(p);
                 state.coverUrl = url;
                 document.getElementById('cover-page').innerHTML = `
                     <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${url}')"></div>
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                     <div class="relative z-10 p-10 mt-auto text-center w-full">
-                        <h1 class="text-6xl font-black text-white leading-tight drop-shadow-lg">${topic}</h1>
+                        <h1 class="text-5xl font-black text-white leading-tight drop-shadow-lg">${topic}</h1>
                         <p class="text-2xl font-black text-indigo-400 mt-4 uppercase tracking-[0.3em]">${state.penName || 'Author'}</p>
                     </div>`;
                 saveState();
                 showToast("Copertina pronta!");
             } catch (e) { showToast(e.message, true); }
-            toggleLoader('cover', false);
             toggleMagic(false);
         });
 
         document.getElementById('btn-seo').addEventListener('click', async () => {
             const topic = document.getElementById('input-topic').value;
             if (!topic) return showToast("Inserisci un titolo!", true);
-            toggleLoader('seo', true);
             toggleMagic(true);
             try {
                 const prompt = `Genera Metadata KDP per: "${topic}". JSON: {"title": "...", "subtitle": "...", "keywords": ["..."], "desc": "HTML formatted AIDA description"}`;
@@ -547,15 +536,8 @@
                 saveState();
                 showToast("SEO completato!");
             } catch (e) { showToast(e.message, true); }
-            toggleLoader('seo', false);
             toggleMagic(false);
         });
-
-        // --- UTILS ---
-        function toggleLoader(id, show) {
-            const l = document.getElementById(`loader-${id}`);
-            if (l) l.classList.toggle('hidden', !show);
-        }
 
         function showToast(msg, error = false) {
             const t = document.getElementById('status-message');
@@ -604,7 +586,6 @@
             }
         }
 
-        // --- NAVIGATION MOBILE ---
         function switchTab(tab) {
             const editor = document.getElementById('panel-editor');
             const preview = document.getElementById('panel-preview');
@@ -633,21 +614,17 @@
         document.getElementById('tab-preview').addEventListener('click', () => switchTab('preview'));
         document.getElementById('btn-open-settings').addEventListener('click', () => openApiModal());
 
-        // --- PDF EXPORT ---
         const exportPdf = () => {
             const loader = document.getElementById('fullscreen-loader');
             loader.classList.remove('hidden'); loader.classList.add('flex');
-            
             const area = document.getElementById('book-export-area');
             const backend = document.querySelectorAll('.kdp-backend-only');
             backend.forEach(el => el.style.display = 'none');
-
             const originalTransform = area.style.transform;
             area.style.transform = 'none';
 
             const opt = {
-                margin: 0,
-                filename: 'kdp_pro_manuscript.pdf',
+                margin: 0, filename: 'kdp_pro_manuscript.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
@@ -659,9 +636,8 @@
                 loader.classList.add('hidden');
                 showToast("PDF Salvato!");
             }).catch(err => {
-                console.error("PDF Error:", err);
                 loader.classList.add('hidden');
-                showToast("Errore durante il salvataggio PDF", true);
+                showToast("Errore PDF", true);
             });
         };
 
