@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>KDP AI Studio - PRO Mobile Edition</title>
+    <title>KDP AI Studio - PRO Mobile</title>
     
-    <!-- Font e Icone -->
+    <!-- Risorse Esterne -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Script Esterni -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -24,16 +22,16 @@
             -webkit-tap-highlight-color: transparent; 
             touch-action: manipulation;
             overscroll-behavior-y: none;
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
         }
 
+        /* Ottimizzazione UI Smartphone */
         .scrollable-panel { 
             -webkit-overflow-scrolling: touch; 
             scroll-behavior: smooth;
-            padding-bottom: 100px;
+            padding-bottom: calc(80px + var(--safe-bottom));
         }
 
-        /* Scaling per mobile dell'anteprima */
         @media (max-width: 768px) {
             #book-export-area {
                 transform: scale(0.42);
@@ -51,408 +49,409 @@
         .page-break { page-break-after: always; break-after: page; }
         
         .loader { 
-            border: 2px solid #f3f3f3; 
+            border: 3px solid #e2e8f0; 
             border-radius: 50%; 
-            border-top: 2px solid #4f46e5; 
-            width: 16px; 
-            height: 16px; 
+            border-top: 3px solid #4f46e5; 
+            width: 24px; 
+            height: 24px; 
             animation: spin 1s linear infinite; 
             display: inline-block; 
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .book-content { font-family: 'Georgia', serif; }
-        .book-content h1 { font-size: 2.5rem; font-weight: 900; text-align: center; margin-bottom: 2rem; }
-        .book-content h2 { font-size: 1.8rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; }
-        .book-content p { font-size: 1.1rem; line-height: 1.7; text-align: justify; margin-bottom: 1.2rem; }
+        /* Tipografia Libro */
+        .book-content { font-family: 'Georgia', serif; color: #1e293b; }
+        .book-content h1 { font-size: 2.2rem; font-weight: 900; text-align: center; margin-bottom: 2rem; color: #0f172a; }
+        .book-content h2 { font-size: 1.6rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .book-content p { font-size: 1.05rem; line-height: 1.8; text-align: justify; margin-bottom: 1.2rem; }
 
-        #status-message.show { transform: translate(-50%, 0); opacity: 1; }
+        /* Animazioni Magia */
+        @keyframes magic-glow {
+            0%, 100% { box-shadow: 0 0 10px #6366f1; transform: scale(1); }
+            50% { box-shadow: 0 0 25px #818cf8; transform: scale(1.05); }
+        }
+        .magic-active { animation: magic-glow 2s infinite; }
+
+        #status-message.show { opacity: 1; transform: translate(-50%, 0); }
         #status-message { 
-            left: 50%;
-            transform: translate(-50%, -20px); 
-            opacity: 0; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: fixed; top: 20px; left: 50%; transform: translate(-50%, -20px);
+            opacity: 0; transition: all 0.3s ease; z-index: 200;
         }
-
-        @keyframes pulse-magic {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-        .magic-pulse { animation: pulse-magic 2s infinite ease-in-out; }
     </style>
 </head>
-<body class="h-screen overflow-hidden flex flex-col font-sans antialiased text-slate-800">
+<body class="h-screen overflow-hidden flex flex-col font-sans text-slate-800">
 
-    <!-- Magic Loader Overlay -->
-    <div id="magic-loader" class="fixed inset-0 bg-indigo-950/90 z-[150] hidden flex-col items-center justify-center backdrop-blur-md transition-all duration-300">
-        <div class="w-20 h-20 bg-indigo-500/20 rounded-full flex items-center justify-center magic-pulse mb-6">
-            <i class="fas fa-wand-magic-sparkles text-4xl text-indigo-400"></i>
+    <!-- Schermo Caricamento Magia -->
+    <div id="magic-overlay" class="fixed inset-0 bg-slate-900/90 z-[150] hidden flex-col items-center justify-center backdrop-blur-sm">
+        <div class="w-24 h-24 bg-indigo-600/30 rounded-full flex items-center justify-center magic-active mb-6">
+            <i class="fas fa-wand-sparkles text-5xl text-white"></i>
         </div>
-        <p class="text-xl font-black text-white tracking-widest uppercase text-center px-6">Sto facendo la magia...</p>
-        <p class="text-indigo-300 text-xs mt-2 font-bold opacity-70 italic">L'IA sta scrivendo per te</p>
+        <p class="text-xl font-black text-white tracking-widest uppercase">Sto facendo la magia...</p>
+        <p class="text-indigo-300 text-xs mt-2 font-bold italic">L'IA sta scrivendo il tuo libro</p>
     </div>
 
-    <!-- API Key Modal -->
-    <div id="api-key-modal" class="fixed inset-0 bg-slate-900/90 z-[110] hidden items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
-            <h2 class="text-xl font-black text-slate-800 mb-2 flex items-center gap-2"><i class="fas fa-key text-amber-500"></i> Chiave AI</h2>
-            <p class="text-xs text-slate-500 mb-6">Inserisci la tua chiave Gemini API per attivare le funzioni creative.</p>
-            <input type="password" id="input-api-key" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 mb-6 font-mono text-sm focus:border-indigo-500 outline-none transition-all" placeholder="Incolla qui la chiave...">
-            <div class="flex flex-col gap-3">
-                <button id="btn-save-api-key" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-all">Collega AI</button>
-                <button id="btn-close-api-modal" class="w-full py-3 text-slate-400 font-bold text-sm">Chiudi</button>
-            </div>
+    <!-- Modal API Key -->
+    <div id="api-modal" class="fixed inset-0 bg-slate-900/80 z-[160] hidden items-center justify-center p-6 backdrop-blur-md">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <h2 class="text-xl font-black mb-2 flex items-center gap-2"><i class="fas fa-key text-amber-500"></i> Configura AI</h2>
+            <p class="text-xs text-slate-500 mb-6">Inserisci la tua chiave Gemini per iniziare.</p>
+            <input type="password" id="api-key-input" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 mb-6 outline-none focus:border-indigo-500 font-mono text-sm" placeholder="AIzaSy...">
+            <button id="save-api-btn" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-100">SALVA CHIAVE</button>
         </div>
     </div>
 
-    <!-- Fullscreen Export Loader -->
-    <div id="fullscreen-loader" class="fixed inset-0 bg-white/95 z-[100] hidden flex-col items-center justify-center backdrop-blur-md">
-        <div class="loader w-12 h-12 mb-4 border-4"></div>
-        <p class="text-lg font-black text-slate-900">Impaginazione PDF...</p>
-    </div>
-
-    <!-- Toast -->
-    <div id="status-message" class="fixed top-6 w-[90%] md:w-80 p-4 rounded-2xl z-[120] shadow-2xl border flex items-center gap-3 bg-white"></div>
+    <!-- Toast Notifiche -->
+    <div id="status-message" class="w-[90%] md:w-80 p-4 rounded-2xl shadow-xl border bg-white flex items-center gap-3"></div>
 
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center z-10 shrink-0">
         <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-indigo-200 shadow-lg">
+            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
                 <i class="fas fa-bolt text-white text-sm"></i>
             </div>
             <span class="font-black text-slate-900 tracking-tighter">KDP <span class="text-indigo-600">PRO</span></span>
         </div>
-        <button id="btn-open-settings" class="w-10 h-10 flex items-center justify-center text-slate-400 bg-slate-50 rounded-xl"><i class="fas fa-cog"></i></button>
+        <button id="settings-btn" class="w-10 h-10 flex items-center justify-center text-slate-400 bg-slate-50 rounded-xl">
+            <i class="fas fa-cog"></i>
+        </button>
     </header>
 
     <main class="flex flex-1 overflow-hidden relative">
         
-        <!-- Pannello Strumenti -->
-        <div id="panel-editor" class="w-full md:w-[400px] bg-white overflow-y-auto scrollable-panel flex flex-col z-10 border-r border-slate-100">
+        <!-- Editor View -->
+        <div id="view-editor" class="w-full md:w-[400px] bg-white overflow-y-auto scrollable-panel flex flex-col z-10 border-r border-slate-100">
             <div class="p-5 space-y-6">
                 
-                <!-- SETUP -->
+                <!-- Setup Libro -->
                 <div class="bg-slate-50 p-5 rounded-3xl space-y-4">
-                    <h2 class="font-black text-slate-800 text-sm flex items-center gap-2"><i class="fas fa-project-diagram text-indigo-500"></i> PROGETTO</h2>
+                    <h3 class="font-black text-[10px] text-slate-400 uppercase tracking-widest">1. Impostazioni Libro</h3>
                     <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">Argomento del Libro</label>
-                        <input type="text" id="input-topic" class="w-full bg-white border-none rounded-2xl p-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="es. Cucina Vegana Veloce">
+                        <input type="text" id="book-topic" class="w-full bg-white border-none rounded-2xl p-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Argomento del libro...">
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">Formato</label>
-                            <select id="select-trim" class="w-full bg-white border-none rounded-xl p-3 text-xs font-bold shadow-sm">
-                                <option value="6x9">6 x 9 in</option>
-                                <option value="8.5x11">8.5 x 11 in</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">Pagine Est.</label>
-                            <input type="number" id="input-pages" class="w-full bg-white border-none rounded-xl p-3 text-xs font-bold shadow-sm" value="100">
-                        </div>
+                        <select id="book-trim" class="bg-white border-none rounded-xl p-3 text-xs font-bold shadow-sm">
+                            <option value="6x9">6 x 9 in</option>
+                            <option value="8.5x11">8.5 x 11 in</option>
+                        </select>
+                        <input type="number" id="book-pages" class="bg-white border-none rounded-xl p-3 text-xs font-bold shadow-sm" value="100">
                     </div>
                 </div>
 
-                <!-- AZIONI -->
+                <!-- Azioni Rapide -->
                 <div class="space-y-3">
-                    <button id="btn-research" class="w-full bg-white border border-slate-200 p-5 rounded-3xl text-left hover:border-indigo-200 transition-all flex justify-between items-center group">
+                    <button id="btn-research" class="w-full bg-white border border-slate-200 p-5 rounded-3xl text-left hover:border-indigo-300 transition-all flex justify-between items-center group">
                         <div>
-                            <h3 class="font-black text-slate-800 text-sm">1. Analizza Mercato</h3>
-                            <p class="text-[10px] text-slate-400 mt-1">Trova i problemi del tuo target.</p>
+                            <span class="font-black text-slate-800 text-sm">Analizza Mercato</span>
+                            <p class="text-[10px] text-slate-400 mt-1">Trova i gap della concorrenza.</p>
                         </div>
-                        <i class="fas fa-search text-slate-200 group-hover:text-indigo-500 transition-colors"></i>
+                        <i class="fas fa-search text-indigo-500"></i>
                     </button>
 
                     <button id="btn-toc" class="w-full bg-indigo-600 p-5 rounded-3xl text-left shadow-lg shadow-indigo-100 active:scale-95 transition-all flex justify-between items-center text-white">
                         <div>
-                            <h3 class="font-black text-sm">2. Genera Indice</h3>
-                            <p class="text-[10px] text-indigo-200 mt-1">Crea la struttura del manoscritto.</p>
+                            <span class="font-black text-sm">Genera Indice</span>
+                            <p class="text-[10px] text-indigo-200 mt-1">Crea i 5 capitoli principali.</p>
                         </div>
                         <i class="fas fa-list-ul"></i>
                     </button>
 
-                    <div id="chapters-manager" class="hidden space-y-2 pt-2">
+                    <!-- Gestione Capitoli -->
+                    <div id="chapters-container" class="hidden space-y-2 pt-2">
                         <div id="chapters-list" class="space-y-2"></div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3 pt-4">
-                        <button id="btn-cover" class="bg-slate-900 text-white p-4 rounded-3xl text-center active:scale-95 transition-all">
-                            <i class="fas fa-image text-amber-400 mb-2 block"></i>
-                            <span class="text-[10px] font-black uppercase">Cover AI</span>
+                        <button id="btn-seo" class="bg-amber-400 text-amber-950 p-4 rounded-3xl font-black text-[10px] uppercase flex flex-col items-center gap-1 shadow-sm">
+                            <i class="fab fa-amazon text-base"></i> SEO KDP
                         </button>
-                        <button id="btn-seo" class="bg-amber-400 text-amber-950 p-4 rounded-3xl text-center active:scale-95 transition-all">
-                            <i class="fab fa-amazon mb-2 block"></i>
-                            <span class="text-[10px] font-black uppercase">SEO KDP</span>
+                        <button id="btn-reset" class="bg-slate-100 text-slate-400 p-4 rounded-3xl font-black text-[10px] uppercase flex flex-col items-center gap-1">
+                            <i class="fas fa-redo text-base"></i> Reset
                         </button>
                     </div>
                 </div>
 
-                <button id="btn-reset-project" class="w-full py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 rounded-2xl mt-10">Reset Totale</button>
             </div>
         </div>
 
-        <!-- Pannello Anteprima -->
-        <div id="panel-preview" class="flex-1 bg-slate-100 p-4 md:p-10 overflow-y-auto scrollable-panel hidden md:flex justify-center preview-container">
+        <!-- Preview View -->
+        <div id="view-preview" class="flex-1 bg-slate-100 p-4 md:p-10 overflow-y-auto scrollable-panel hidden md:flex justify-center preview-container">
             <div id="book-export-area" class="bg-white w-[850px] min-h-[1100px] shadow-2xl p-16 book-content relative shrink-0">
                 
-                <!-- DASHBOARD SEO -->
-                <div id="kdp-backend-page" class="kdp-backend-only hidden bg-indigo-50 p-8 rounded-3xl border border-indigo-100 mb-10">
-                    <h2 class="text-indigo-900 font-black mb-6 flex items-center gap-2"><i class="fab fa-amazon"></i> Metadati KDP</h2>
-                    <div class="space-y-4 text-xs">
-                        <div><label class="font-black text-slate-400 uppercase block mb-1">Titolo</label><div id="seo-title" class="bg-white p-3 rounded-xl border border-indigo-100 font-bold"></div></div>
-                        <div><label class="font-black text-slate-400 uppercase block mb-1">Sottotitolo</label><div id="seo-subtitle" class="bg-white p-3 rounded-xl border border-indigo-100"></div></div>
-                        <div><label class="font-black text-slate-400 uppercase block mb-1">Keyword</label><div id="seo-keywords" class="flex flex-wrap gap-2"></div></div>
-                        <div><label class="font-black text-slate-400 uppercase block mb-1">Descrizione HTML</label><div id="seo-desc" class="bg-slate-900 text-indigo-300 p-4 rounded-xl font-mono text-[10px] whitespace-pre-wrap overflow-y-auto max-h-40"></div></div>
+                <!-- Metadata Hidden for user, shown for KDP -->
+                <div id="kdp-metadata" class="kdp-backend-only hidden bg-indigo-50 p-8 rounded-3xl border border-indigo-100 mb-10">
+                    <h2 class="text-indigo-900 font-black mb-4 flex items-center gap-2"><i class="fab fa-amazon"></i> Metadati KDP</h2>
+                    <div class="space-y-3 text-xs">
+                        <div id="seo-result-title" class="bg-white p-3 rounded-xl border border-indigo-100 font-bold">...</div>
+                        <div id="seo-result-desc" class="bg-slate-900 text-indigo-300 p-4 rounded-xl font-mono text-[10px] h-32 overflow-y-auto"></div>
                     </div>
                 </div>
 
-                <!-- PAGINA COPERTINA -->
-                <div id="cover-page" class="page-break flex flex-col items-center justify-center min-h-[900px] relative overflow-hidden bg-slate-50 border border-slate-100 rounded-lg">
-                    <div id="cover-placeholder" class="text-center z-10 p-10">
-                        <i class="fas fa-book-open text-7xl text-slate-200 mb-6"></i>
-                        <h1 id="preview-title" class="text-5xl font-black text-slate-900 uppercase">Titolo Libro</h1>
-                        <p id="preview-author" class="text-xl mt-6 text-indigo-600 font-bold uppercase tracking-widest">Nome Autore</p>
-                    </div>
+                <!-- Pagine Libro -->
+                <div id="cover-page" class="page-break flex flex-col items-center justify-center min-h-[900px] bg-slate-50 border border-slate-100 rounded-lg text-center p-10">
+                    <i class="fas fa-book-open text-7xl text-slate-200 mb-8"></i>
+                    <h1 id="preview-title" class="uppercase">Titolo del Libro</h1>
+                    <p id="preview-author" class="text-xl text-indigo-600 font-black uppercase tracking-widest mt-4">Autore AI Pro</p>
                 </div>
 
-                <!-- PAGINA INDICE -->
                 <div id="toc-page" class="page-break hidden pt-20">
-                    <h1 class="text-4xl font-black text-slate-900 mb-12 border-b-8 border-slate-100 pb-4">Indice</h1>
+                    <h1 class="text-4xl font-black border-b-8 border-slate-100 pb-4 mb-10">Indice</h1>
                     <div id="toc-content" class="text-xl space-y-4"></div>
                 </div>
 
-                <!-- MANOSCRITTO -->
                 <div id="manuscript-content" class="mt-20">
-                    <div id="empty-manuscript-msg" class="text-center py-40 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                        <i class="fas fa-pen-nib text-4xl text-slate-200 mb-4"></i>
-                        <p class="font-black text-slate-400">Il tuo capolavoro inizia qui.</p>
+                    <div id="empty-msg" class="text-center py-40 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                        <i class="fas fa-feather-pointed text-4xl text-slate-200 mb-4"></i>
+                        <p class="font-black text-slate-400">Pronto per scrivere il prossimo Best Seller?</p>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Navigazione Mobile -->
-    <div class="md:hidden bg-white border-t border-slate-200 grid grid-cols-3 shrink-0 fixed bottom-0 w-full z-50 px-2 pt-2 pb-8">
-        <button id="tab-editor" class="flex flex-col items-center justify-center py-2 text-indigo-600">
-            <i class="fas fa-wand-sparkles text-xl mb-1"></i>
-            <span class="text-[9px] font-black uppercase">Crea</span>
+    <!-- Navigazione Smartphone Bottom -->
+    <nav class="md:hidden bg-white border-t border-slate-200 grid grid-cols-3 shrink-0 fixed bottom-0 w-full z-50 px-2 pt-2 pb-8">
+        <button id="tab-editor" class="flex flex-col items-center justify-center py-2 text-indigo-600 transition-all">
+            <i class="fas fa-magic text-xl mb-1"></i>
+            <span class="text-[9px] font-black uppercase">Editor</span>
         </button>
-        <button id="tab-preview" class="flex flex-col items-center justify-center py-2 text-slate-400">
+        <button id="tab-preview" class="flex flex-col items-center justify-center py-2 text-slate-400 transition-all">
             <i class="fas fa-eye text-xl mb-1"></i>
             <span class="text-[9px] font-black uppercase">Anteprima</span>
         </button>
-        <button id="mobile-export-pdf" class="flex flex-col items-center justify-center py-2 text-slate-400">
+        <button id="btn-save-pdf" class="flex flex-col items-center justify-center py-2 text-slate-400 transition-all">
             <i class="fas fa-file-pdf text-xl mb-1"></i>
-            <span class="text-[9px] font-black uppercase">Salva</span>
+            <span class="text-[9px] font-black uppercase">Esporta</span>
         </button>
-    </div>
+    </nav>
 
     <script>
-        // Configurazione
-        let state = { topic: "", trim: "6x9", chapters: [], coverUrl: "", seoData: null, penName: "Autore Pro" };
+        // Stato Applicazione
+        let state = { topic: "", chapters: [], seo: null };
 
-        // Funzione per la gestione delle chiamate API
-        async function callGemini(prompt, isJson = false) {
+        // --- FUNZIONI CORE API ---
+        async function fetchAI(prompt, isJson = false) {
             const key = localStorage.getItem('kdp_gemini_key');
-            if (!key) { 
-                document.getElementById('api-key-modal').classList.remove('hidden');
-                document.getElementById('api-key-modal').classList.add('flex');
-                throw new Error("API Key mancante"); 
+            if (!key) {
+                document.getElementById('api-modal').classList.remove('hidden');
+                document.getElementById('api-modal').classList.add('flex');
+                throw new Error("API Key mancante");
             }
 
-            // Utilizzo del modello stabile 1.5-flash per evitare errori 404 frequenti sui modelli preview
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
+            // Endpoint Gemini 1.5 Flash (Stabile e Veloce)
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
             
             const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: isJson ? { responseMimeType: "application/json" } : {}
+                contents: [{ parts: [{ text: prompt }] }]
             };
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                if (response.status === 404) throw new Error("Errore 404: Modello non trovato. Controlla la chiave API.");
-                throw new Error("Errore API: " + response.status);
+            if (isJson) {
+                payload.generationConfig = { 
+                    responseMimeType: "application/json" 
+                };
+                // Aggiungiamo un'istruzione esplicita nel prompt per il JSON
+                payload.contents[0].parts[0].text += " Rispondi esclusivamente in formato JSON valido.";
             }
 
-            const data = await response.json();
-            const result = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            return isJson ? JSON.parse(result) : result;
-        }
-
-        // Funzione per le immagini
-        async function callImagen(promptText) {
-            const key = localStorage.getItem('kdp_gemini_key');
-            // Nota: Imagen 4.0 richiede permessi specifici su GCP. Usiamo un fallback se non disponibile.
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${key}`;
-            const payload = { instances: [{ prompt: promptText }], parameters: { sampleCount: 1 } };
-            
             try {
-                const response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    console.error("Dettaglio Errore:", error);
+                    throw new Error(error.error?.message || `Errore API ${response.status}`);
+                }
+
                 const data = await response.json();
-                return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
-            } catch (e) {
-                showToast("Generazione immagine non disponibile per questa chiave.", true);
-                return null;
+                const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (!textResult) throw new Error("L'IA ha restituito una risposta vuota.");
+                
+                return isJson ? JSON.parse(textResult) : textResult;
+            } catch (err) {
+                showToast(err.message, true);
+                throw err;
             }
         }
 
-        // --- AZIONI ---
+        // --- AZIONI UTENTE ---
 
-        // Analisi di Mercato
+        // 1. Analisi di Mercato
         document.getElementById('btn-research').addEventListener('click', async () => {
-            const topic = document.getElementById('input-topic').value;
+            const topic = document.getElementById('book-topic').value;
             if (!topic) return showToast("Inserisci un argomento!", true);
             
             toggleMagic(true);
             try {
-                const prompt = `Analisi di mercato Amazon per un libro su: "${topic}". Identifica: Target Audience, Problemi Principali (Pain Points), Angolo di vendita unico. Rispondi in Italiano. JSON: {"audience": "...", "pain_points": "...", "angle": "..."}`;
-                const res = await callGemini(prompt, true);
-                document.getElementById('kdp-backend-page').classList.remove('hidden');
-                document.getElementById('seo-title').innerText = topic;
-                showToast("Analisi completata!");
-                saveState();
-            } catch (e) { showToast(e.message, true); }
+                const prompt = `Analisi di mercato Amazon per un libro su: "${topic}". Crea un breve profilo del target e identifica i 3 problemi principali che il libro risolverà. Lingua: Italiano. JSON: {"target": "...", "problemi": "...", "vantaggio": "..."}`;
+                const res = await fetchAI(prompt, true);
+                document.getElementById('kdp-metadata').classList.remove('hidden');
+                document.getElementById('seo-result-title').innerText = "Target: " + (res.target || topic);
+                showToast("Analisi completata con successo!");
+            } catch (e) { console.error(e); }
             toggleMagic(false);
         });
 
-        // Generazione Indice
+        // 2. Generazione Indice
         document.getElementById('btn-toc').addEventListener('click', async () => {
-            const topic = document.getElementById('input-topic').value;
+            const topic = document.getElementById('book-topic').value;
             if (!topic) return showToast("Inserisci un argomento!", true);
             
             toggleMagic(true);
             try {
-                const prompt = `Crea un indice di 5 capitoli per un libro intitolato "${topic}". Rispondi SOLO con un array JSON di stringhe in Italiano: ["Cap 1", "Cap 2", ...]`;
-                const list = await callGemini(prompt, true);
+                const prompt = `Crea un indice di 5 capitoli per un libro su "${topic}". Restituisci solo un array JSON di stringhe in Italiano. Esempio: ["Introduzione", "Capitolo 1...", ...]`;
+                const list = await fetchAI(prompt, true);
+                
                 state.chapters = list.map(title => ({ title, content: "" }));
                 renderChapters();
                 renderTOC();
-                document.getElementById('empty-manuscript-msg').classList.add('hidden');
+                
+                document.getElementById('empty-msg').classList.add('hidden');
+                document.getElementById('preview-title').innerText = topic;
                 showToast("Indice generato!");
-                saveState();
-            } catch (e) { showToast(e.message, true); }
+                saveLocal();
+            } catch (e) { console.error(e); }
             toggleMagic(false);
         });
 
-        // Scrittura Capitolo
+        // 3. Scrittura Capitolo
         window.writeChapter = async (idx) => {
             toggleMagic(true);
             try {
-                const topic = document.getElementById('input-topic').value;
-                const prompt = `Sei un autore KDP. Scrivi il capitolo "${state.chapters[idx].title}" per il libro "${topic}". Usa un tono professionale, markdown, circa 700 parole. Scrivi in Italiano.`;
-                const text = await callGemini(prompt);
-                state.chapters[idx].content = marked.parse(text);
+                const topic = document.getElementById('book-topic').value;
+                const chapTitle = state.chapters[idx].title;
+                const prompt = `Sei un esperto. Scrivi il testo completo del capitolo "${chapTitle}" per il libro "${topic}". Usa uno stile coinvolgente, usa il markdown per titoli e paragrafi. Almeno 800 parole. Lingua: Italiano.`;
+                
+                const content = await fetchAI(prompt);
+                state.chapters[idx].content = marked.parse(content);
+                
                 renderManuscript();
-                showToast("Capitolo pronto!");
-                saveState();
-            } catch (e) { showToast(e.message, true); }
+                showToast(`Capitolo "${chapTitle}" pronto!`);
+                saveLocal();
+            } catch (e) { console.error(e); }
             toggleMagic(false);
         };
 
-        // --- UI E UTILS ---
+        // --- UI UTILS ---
 
         function toggleMagic(show) {
-            document.getElementById('magic-loader').classList.toggle('hidden', !show);
-            if (show) document.getElementById('magic-loader').classList.add('flex');
-            else document.getElementById('magic-loader').classList.remove('flex');
+            const overlay = document.getElementById('magic-overlay');
+            overlay.classList.toggle('hidden', !show);
+            overlay.classList.toggle('flex', show);
         }
 
         function showToast(msg, error = false) {
             const t = document.getElementById('status-message');
-            t.innerHTML = `<i class="fas ${error ? 'fa-times-circle text-red-500' : 'fa-check-circle text-emerald-500'}"></i> <span class="text-xs font-bold">${msg}</span>`;
+            t.innerHTML = `<i class="fas ${error ? 'fa-circle-xmark text-red-500' : 'fa-check-circle text-emerald-500'}"></i> <span class="text-xs font-bold">${msg}</span>`;
             t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
+            setTimeout(() => t.classList.remove('show'), 4000);
         }
 
         function renderChapters() {
             const list = document.getElementById('chapters-list');
             list.innerHTML = "";
-            document.getElementById('chapters-manager').classList.remove('hidden');
+            document.getElementById('chapters-container').classList.remove('hidden');
             state.chapters.forEach((c, i) => {
-                const d = document.createElement('div');
-                d.className = "flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100";
-                d.innerHTML = `<div class="text-xs font-bold truncate pr-2">${i+1}. ${c.title}</div><button onclick="writeChapter(${i})" class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase">Scrivi</button>`;
-                list.appendChild(d);
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-200";
+                div.innerHTML = `
+                    <div class="text-[11px] font-bold truncate pr-2 flex-1">${i+1}. ${c.title}</div>
+                    <button onclick="writeChapter(${i})" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase shrink-0 active:scale-95">Scrivi</button>
+                `;
+                list.appendChild(div);
             });
         }
 
         function renderTOC() {
             document.getElementById('toc-page').classList.remove('hidden');
-            document.getElementById('toc-content').innerHTML = state.chapters.map((c, i) => `<div>${i+1}. ${c.title}</div>`).join("");
+            document.getElementById('toc-content').innerHTML = state.chapters.map((c, i) => `<div class="flex justify-between border-b border-slate-100 pb-2"><span>${i+1}. ${c.title}</span></div>`).join("");
         }
 
         function renderManuscript() {
             const ms = document.getElementById('manuscript-content');
             ms.innerHTML = state.chapters.map((c, i) => `
                 <div class="page-break">
-                    <h2 class="text-3xl font-black text-slate-900 border-b-4 border-slate-900 pb-4 mb-8">Capitolo ${i+1}: ${c.title}</h2>
-                    <div class="prose prose-slate max-w-none">${c.content || "<i>Contenuto da generare...</i>"}</div>
+                    <h2 class="text-3xl font-black mb-8">Capitolo ${i+1}: ${c.title}</h2>
+                    <div class="prose max-w-none">${c.content || "<i>Contenuto da generare...</i>"}</div>
                 </div>
             `).join("");
         }
 
-        // Export PDF
-        const exportPdf = () => {
-            document.getElementById('fullscreen-loader').classList.remove('hidden');
-            document.getElementById('fullscreen-loader').classList.add('flex');
-            const area = document.getElementById('book-export-area');
-            document.querySelectorAll('.kdp-backend-only').forEach(el => el.style.display = 'none');
-            
-            area.style.transform = 'none'; // Reset scale per l'export
+        // --- EVENTI E NAVIGAZIONE ---
 
-            html2pdf().set({
-                margin: 0, filename: 'manoscritto_kdp.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            }).from(area).save().then(() => {
-                location.reload(); // Semplice reset post export
-            });
-        };
-
-        // Event Listeners
         document.getElementById('tab-editor').addEventListener('click', () => {
-            document.getElementById('panel-editor').classList.remove('hidden');
-            document.getElementById('panel-preview').classList.add('hidden');
-            document.getElementById('tab-editor').classList.add('text-indigo-600');
+            document.getElementById('view-editor').classList.remove('hidden');
+            document.getElementById('view-preview').classList.add('hidden');
+            document.getElementById('tab-editor').classList.replace('text-slate-400', 'text-indigo-600');
             document.getElementById('tab-preview').classList.replace('text-indigo-600', 'text-slate-400');
         });
 
         document.getElementById('tab-preview').addEventListener('click', () => {
-            document.getElementById('panel-editor').classList.add('hidden');
-            document.getElementById('panel-preview').classList.remove('hidden');
-            document.getElementById('panel-preview').classList.add('flex');
-            document.getElementById('tab-preview').classList.add('text-indigo-600');
+            document.getElementById('view-editor').classList.add('hidden');
+            document.getElementById('view-preview').classList.remove('hidden');
+            document.getElementById('view-preview').classList.add('flex');
+            document.getElementById('tab-preview').classList.replace('text-slate-400', 'text-indigo-600');
             document.getElementById('tab-editor').classList.replace('text-indigo-600', 'text-slate-400');
         });
 
-        document.getElementById('mobile-export-pdf').addEventListener('click', exportPdf);
-        document.getElementById('btn-open-settings').addEventListener('click', () => document.getElementById('api-key-modal').classList.remove('hidden'));
-        document.getElementById('btn-close-api-modal').addEventListener('click', () => document.getElementById('api-key-modal').classList.add('hidden'));
-        document.getElementById('btn-save-api-key').addEventListener('click', () => {
-            const v = document.getElementById('input-api-key').value.trim();
-            if (v) { localStorage.setItem('kdp_gemini_key', v); document.getElementById('api-key-modal').classList.add('hidden'); showToast("Chiave salvata!"); }
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            document.getElementById('api-modal').classList.remove('hidden');
+            document.getElementById('api-modal').classList.add('flex');
+            document.getElementById('api-key-input').value = localStorage.getItem('kdp_gemini_key') || "";
         });
 
-        function saveState() {
-            state.topic = document.getElementById('input-topic').value;
-            localStorage.setItem('kdp_state_it', JSON.stringify(state));
+        document.getElementById('save-api-btn').addEventListener('click', () => {
+            const val = document.getElementById('api-key-input').value.trim();
+            if (val) {
+                localStorage.setItem('kdp_gemini_key', val);
+                document.getElementById('api-modal').classList.add('hidden');
+                showToast("Chiave salvata correttamente!");
+            }
+        });
+
+        document.getElementById('btn-save-pdf').addEventListener('click', () => {
+            const area = document.getElementById('book-export-area');
+            document.querySelectorAll('.kdp-backend-only').forEach(el => el.style.display = 'none');
+            area.style.transform = 'none'; // Reset zoom mobile
+
+            const opt = {
+                margin: 10, filename: 'libro_kdp.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(area).save().then(() => {
+                location.reload(); 
+            });
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            if(confirm("Sei sicuro? Perderai tutto il lavoro corrente.")) {
+                localStorage.removeItem('kdp_state_v2');
+                location.reload();
+            }
+        });
+
+        function saveLocal() {
+            localStorage.setItem('kdp_state_v2', JSON.stringify(state));
         }
 
         window.onload = () => {
-            const saved = localStorage.getItem('kdp_state_it');
+            const saved = localStorage.getItem('kdp_state_v2');
             if (saved) {
                 state = JSON.parse(saved);
-                document.getElementById('input-topic').value = state.topic;
-                if (state.chapters.length > 0) { renderChapters(); renderTOC(); renderManuscript(); document.getElementById('empty-manuscript-msg').classList.add('hidden'); }
+                document.getElementById('book-topic').value = state.topic || "";
+                if (state.chapters.length > 0) {
+                    renderChapters(); renderTOC(); renderManuscript();
+                    document.getElementById('empty-msg').classList.add('hidden');
+                }
             }
         };
+
     </script>
 </body>
 </html>
